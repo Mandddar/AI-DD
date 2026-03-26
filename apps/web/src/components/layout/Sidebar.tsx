@@ -3,22 +3,24 @@ import { LayoutDashboard, FolderOpen, FileText, Brain, BarChart3, Settings, LogO
 import { useAuthStore } from "../../store/auth";
 import { cn } from "../../lib/utils";
 
-function useProjectNav() {
-  const { projectId } = useParams<{ projectId?: string }>();
-  return (path: string) => projectId ? `/projects/${projectId}${path}` : "/projects";
-}
-
 function SidebarContent() {
-  const projectPath = useProjectNav();
+  const { projectId } = useParams<{ projectId?: string }>();
   const { user, logout } = useAuthStore();
 
   const NAV = [
-    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", exact: false },
-    { to: "/projects", icon: FolderOpen, label: "Deals", exact: false },
-    { to: projectPath("/documents"), icon: FileText, label: "Documents", exact: false },
-    { to: projectPath("/analysis"), icon: Brain, label: "AI Analysis", exact: false },
-    { to: "/reports", icon: BarChart3, label: "Reports", exact: false },
-  ];
+    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", end: true },
+    { to: "/projects", icon: FolderOpen, label: "Deals", end: true },
+    ...(projectId
+      ? [
+          { to: `/projects/${projectId}/documents`, icon: FileText, label: "Documents", end: false },
+          { to: `/projects/${projectId}/analysis`, icon: Brain, label: "AI Analysis", end: false },
+        ]
+      : [
+          { to: "#", icon: FileText, label: "Documents", end: true, disabled: true },
+          { to: "#", icon: Brain, label: "AI Analysis", end: true, disabled: true },
+        ]),
+    { to: "/reports", icon: BarChart3, label: "Reports", end: true },
+  ] as const;
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-canvas-border bg-canvas-subtle">
@@ -35,23 +37,39 @@ function SidebarContent() {
 
       {/* Nav */}
       <nav className="flex-1 space-y-0.5 p-3">
-        {NAV.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={label}
-            to={to}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-3 rounded px-3 py-2 text-sm transition-colors",
-                isActive
-                  ? "bg-gold/10 text-gold ring-1 ring-gold/20"
-                  : "text-text-secondary hover:bg-surface hover:text-text-primary"
-              )
-            }
-          >
-            <Icon size={15} />
-            {label}
-          </NavLink>
-        ))}
+        {NAV.map((item) => {
+          const Icon = item.icon;
+          const disabled = "disabled" in item && item.disabled;
+          if (disabled) {
+            return (
+              <span
+                key={item.label}
+                className="flex items-center gap-3 rounded px-3 py-2 text-sm text-text-muted/50 cursor-not-allowed"
+              >
+                <Icon size={15} />
+                {item.label}
+              </span>
+            );
+          }
+          return (
+            <NavLink
+              key={item.label}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded px-3 py-2 text-sm transition-colors",
+                  isActive
+                    ? "bg-gold/10 text-gold ring-1 ring-gold/20"
+                    : "text-text-secondary hover:bg-surface hover:text-text-primary"
+                )
+              }
+            >
+              <Icon size={15} />
+              {item.label}
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* User + logout */}

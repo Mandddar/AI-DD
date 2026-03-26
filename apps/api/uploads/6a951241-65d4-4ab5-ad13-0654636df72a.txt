@@ -1,0 +1,21 @@
+MediTech GmbH - Annual Report 2024
+
+Revenue: EUR 24.8 million (prior year: EUR 21.2 million), representing 17% year-over-year growth.
+
+EBITDA: EUR 3.2 million, including one-off restructuring costs of EUR 340,000 related to the closure of the Munich office.
+
+Key Contracts: The company has 3 material customer contracts containing change-of-control clauses that require counterparty consent upon a change in ownership exceeding 50%.
+
+Employee Overview: 148 full-time employees across 3 locations (Frankfurt, Munich, Berlin). 4 senior engineers do not have non-compete agreements in their employment contracts.
+
+IP Portfolio: 12 registered patents, 3 pending applications. 2 developer contractors have not executed IP assignment agreements.
+
+Litigation: One pending claim from a former distributor (EUR 180,000 estimated exposure). No other known or threatened litigation.
+
+Tax: Corporate income tax returns filed through FY2023. FY2022 tax audit currently ongoing with no material findings to date. Deferred tax liability of EUR 2.4 million on accelerated depreciation. Intercompany management fee of EUR 420,000 paid to parent entity lacks transfer pricing documentation.
+
+Customer Concentration: Top 3 customers account for 67% of total revenue. Largest single customer represents 31% of revenue.
+
+Working Capital: Accounts receivable days increased from 42 to 58 days in Q4 2024. Seasonal pattern shows Q4 receivables averaging 47% above annual mean.
+
+GDPR: 3 data processing agreements with key vendors are missing or incomplete.
