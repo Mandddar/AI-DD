@@ -1,0 +1,15 @@
+{
+  "name": "ai-dd",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:api": "cd apps/api && .venv/Scripts/python run.py"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
