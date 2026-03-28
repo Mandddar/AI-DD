@@ -12,6 +12,7 @@ import { ProjectsPage } from "./pages/projects/ProjectsPage";
 import { DocumentsPage } from "./pages/documents/DocumentsPage";
 import { AgentsPage } from "./pages/agents/AgentsPage";
 import { AgentRunPage } from "./pages/agents/AgentRunPage";
+import { LandingPage } from "./pages/LandingPage";
 
 const qc = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -52,6 +53,7 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/disclaimer" element={<DisclaimerPage />} />
@@ -71,8 +73,6 @@ function AppRoutes() {
         <Route path="/projects/:projectId/analysis/:runId" element={<AgentRunPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
-
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }
