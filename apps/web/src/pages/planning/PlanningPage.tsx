@@ -164,6 +164,18 @@ export default function PlanningPage() {
         </div>
       )}
 
+      {/* Phase 1 complete but stuck (legacy plans) — show advance button */}
+      {plan?.current_phase === 'basic_data' && (
+        <div className="card p-6 space-y-4">
+          <h2 className="text-lg font-display font-semibold text-primary">Phase 1 — Basic Data Submitted</h2>
+          <p className="text-secondary text-sm">Company data has been recorded. Advance to AI Risk Analysis.</p>
+          <button className="btn-primary px-6 py-2" onClick={() => advancePhase.mutate()}
+            disabled={advancePhase.isPending}>
+            {advancePhase.isPending ? 'Generating Risk Analysis...' : 'Proceed to Risk Analysis'}
+          </button>
+        </div>
+      )}
+
       {/* Phase 2 — Risk Analysis */}
       {plan?.current_phase === 'risk_analysis' && (
         <div className="card p-6 space-y-4">

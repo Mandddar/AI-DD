@@ -12,6 +12,7 @@ from modules.auth.dependencies import current_user as get_current_user
 from modules.auth.models import User
 from .models import AuditPlan, RequestListItem, PlanningPhase
 from .schemas import BasicDataInput, DialogAnswer, RequestItemUpdate, AuditPlanOut, RequestItemOut
+from .service import generate_risk_analysis, generate_dialog_questions, generate_audit_plan, generate_request_list_items
 
 router = APIRouter(prefix="/projects/{project_id}/planning", tags=["planning"])
 
@@ -23,8 +24,7 @@ async def submit_basic_data(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Phase 1: Submit basic company data to start audit planning."""
-    # Check if plan already exists
+    """Phase 1: Submit basic company data — auto-advances to Phase 2 with AI risk analysis."""
     result = await db.execute(
         select(AuditPlan).where(AuditPlan.project_id == project_id)
     )
@@ -32,11 +32,17 @@ async def submit_basic_data(
     if existing:
         raise HTTPException(status_code=400, detail="Audit plan already exists for this project")
 
+    basic_data = data.model_dump()
+
+    # Generate risk analysis (Phase 2 content) immediately
+    risk_analysis = await generate_risk_analysis(basic_data)
+
     plan = AuditPlan(
         project_id=project_id,
         created_by=user.id,
-        current_phase=PlanningPhase.basic_data,
-        basic_data=data.model_dump(),
+        current_phase=PlanningPhase.risk_analysis,  # Auto-advance to Phase 2
+        basic_data=basic_data,
+        risk_analysis=risk_analysis,
     )
     db.add(plan)
     await db.commit()
@@ -63,7 +69,7 @@ async def advance_phase(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Advance the audit plan to the next phase (triggers AI processing)."""
+    """Advance the audit plan to the next phase (triggers AI processing for the new phase)."""
     result = await db.execute(
         select(AuditPlan).where(AuditPlan.project_id == project_id)
     )
@@ -71,13 +77,35 @@ async def advance_phase(
     if not plan:
         raise HTTPException(status_code=404, detail="No audit plan found")
 
-    # Phase transitions — AI processing happens in service layer
     phase_order = list(PlanningPhase)
     current_idx = phase_order.index(plan.current_phase)
     if current_idx >= len(phase_order) - 1:
         raise HTTPException(status_code=400, detail="Already at final phase")
 
-    plan.current_phase = phase_order[current_idx + 1]
+    next_phase = phase_order[current_idx + 1]
+
+    # Generate AI content for the next phase
+    if next_phase == PlanningPhase.risk_analysis:
+        plan.risk_analysis = await generate_risk_analysis(plan.basic_data or {})
+    elif next_phase == PlanningPhase.dialog:
+        plan.dialog_history = await generate_dialog_questions(
+            plan.basic_data or {}, plan.risk_analysis or []
+        )
+    elif next_phase == PlanningPhase.plan_approval:
+        plan.audit_plan_content = await generate_audit_plan(
+            plan.basic_data or {}, plan.risk_analysis or [], plan.dialog_history or []
+        )
+    elif next_phase == PlanningPhase.request_list:
+        # Generate request list items
+        items = generate_request_list_items(plan.basic_data or {}, plan.risk_analysis or [])
+        for idx, item_data in enumerate(items, start=1):
+            db.add(RequestListItem(
+                audit_plan_id=plan.id,
+                item_number=idx,
+                **item_data,
+            ))
+
+    plan.current_phase = next_phase
     await db.commit()
     await db.refresh(plan)
     return plan
@@ -89,7 +117,7 @@ async def approve_plan(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Phase 4: Human approves the audit plan — agents may now begin work."""
+    """Phase 4: Human approves the audit plan — generates request list and advances to Phase 5."""
     result = await db.execute(
         select(AuditPlan).where(AuditPlan.project_id == project_id)
     )
@@ -101,6 +129,20 @@ async def approve_plan(
     plan.is_approved = True
     plan.approved_by = user.id
     plan.approved_at = datetime.now(timezone.utc)
+
+    # Generate request list items on approval
+    existing_items = await db.execute(
+        select(RequestListItem).where(RequestListItem.audit_plan_id == plan.id).limit(1)
+    )
+    if not existing_items.scalar_one_or_none():
+        items = generate_request_list_items(plan.basic_data or {}, plan.risk_analysis or [])
+        for idx, item_data in enumerate(items, start=1):
+            db.add(RequestListItem(
+                audit_plan_id=plan.id,
+                item_number=idx,
+                **item_data,
+            ))
+
     plan.current_phase = PlanningPhase.request_list
     await db.commit()
     await db.refresh(plan)

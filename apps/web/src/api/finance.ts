@@ -34,7 +34,9 @@ export const finance = {
   uploadData: (projectId: string, file: File) => {
     const form = new FormData();
     form.append('file', file);
-    return api.post<FinancialDataset>(`/projects/${projectId}/finance/upload`, form).then(r => r.data);
+    return api.post<FinancialDataset>(`/projects/${projectId}/finance/upload`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(r => r.data);
   },
 
   listDatasets: (projectId: string) =>

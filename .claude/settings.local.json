@@ -27,7 +27,9 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" -X POST http://localhost:8000/api/v1/projects/e40c0c1f-5d42-4da7-86f0-7768b78625d0/documents -H \"Authorization: Bearer test\")",
       "Bash(curl -s http://localhost:8000/api/v1/projects/e8f80311-c4cd-4a86-b8d2-1c3a745c0ace/planning/ -H \"Authorization: Bearer test\")",
-      "Bash(find /m/programming/AI-DD -type f -name *.log)"
+      "Bash(find /m/programming/AI-DD -type f -name *.log)",
+      "Bash(python -c \":*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
