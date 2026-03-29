@@ -13,6 +13,8 @@ import { DocumentsPage } from "./pages/documents/DocumentsPage";
 import { AgentsPage } from "./pages/agents/AgentsPage";
 import { AgentRunPage } from "./pages/agents/AgentRunPage";
 import { LandingPage } from "./pages/LandingPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { FinancePage } from "./pages/finance/FinancePage";
 
 const qc = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -71,6 +73,8 @@ function AppRoutes() {
         <Route path="/projects/:projectId/documents" element={<DocumentsPage />} />
         <Route path="/projects/:projectId/analysis" element={<AgentsPage />} />
         <Route path="/projects/:projectId/analysis/:runId" element={<AgentRunPage />} />
+        <Route path="/projects/:projectId/finance" element={<FinancePage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>

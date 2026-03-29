@@ -1,5 +1,5 @@
 import { NavLink, useParams } from "react-router-dom";
-import { LayoutDashboard, FolderOpen, FileText, Brain, BarChart3, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, FolderOpen, FileText, Brain, BarChart3, Settings, LogOut, TrendingUp } from "lucide-react";
 import { useAuthStore } from "../../store/auth";
 import { cn } from "../../lib/utils";
 
@@ -14,10 +14,12 @@ function SidebarContent() {
       ? [
           { to: `/projects/${projectId}/documents`, icon: FileText, label: "Documents", end: false },
           { to: `/projects/${projectId}/analysis`, icon: Brain, label: "AI Analysis", end: false },
+          { to: `/projects/${projectId}/finance`, icon: TrendingUp, label: "Finance", end: false },
         ]
       : [
           { to: "#", icon: FileText, label: "Documents", end: true, disabled: true },
           { to: "#", icon: Brain, label: "AI Analysis", end: true, disabled: true },
+          { to: "#", icon: TrendingUp, label: "Finance", end: true, disabled: true },
         ]),
     { to: "/reports", icon: BarChart3, label: "Reports", end: true },
   ] as const;

@@ -6,6 +6,7 @@ from sqlalchemy import select, func
 from core.database import get_db
 from modules.auth.dependencies import current_user, require_advisor
 from modules.auth.models import User
+from modules.projects.dependencies import check_project_access
 from .models import AgentRun, AgentFinding, FindingStatus
 from .schemas import RunCreate, RunResponse, RunSummaryResponse, FindingReview, FindingResponse
 from .orchestrator import run_analysis
@@ -21,6 +22,7 @@ async def trigger_run(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_advisor),
 ):
+    await check_project_access(project_id, user, db)
     valid = {"planning", "legal", "tax", "finance"}
     workstreams = [w for w in data.workstreams if w in valid]
     if not workstreams:
@@ -49,6 +51,7 @@ async def list_runs(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(current_user),
 ):
+    await check_project_access(project_id, user, db)
     runs_result = await db.execute(
         select(AgentRun)
         .where(AgentRun.project_id == project_id)
@@ -76,6 +79,7 @@ async def get_run(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(current_user),
 ):
+    await check_project_access(project_id, user, db)
     run = await db.get(AgentRun, run_id)
     if not run or run.project_id != project_id:
         raise HTTPException(status_code=404, detail="Run not found")
@@ -102,6 +106,7 @@ async def review_finding(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_advisor),
 ):
+    await check_project_access(project_id, user, db)
     finding = await db.get(AgentFinding, finding_id)
     if not finding or finding.run_id != run_id:
         raise HTTPException(status_code=404, detail="Finding not found")

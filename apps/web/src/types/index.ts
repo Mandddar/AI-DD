@@ -7,6 +7,7 @@ export interface User {
   role: UserRole;
   is_active: boolean;
   disclaimer_accepted: boolean;
+  totp_enabled: boolean;
   created_at: string;
 }
 

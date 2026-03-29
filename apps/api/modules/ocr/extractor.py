@@ -32,7 +32,8 @@ def extract_text(file_bytes: bytes, mime_type: str, filename: str) -> tuple[str,
     if mime_type.startswith("text/") or ext in (".txt", ".csv", ".tsv"):
         return file_bytes.decode("utf-8", errors="replace"), None
 
-    return "", None
+    # Unsupported format — raise instead of returning empty silently
+    raise ValueError(f"Unsupported format for text extraction: {mime_type} ({ext})")
 
 
 def _extract_pdf(data: bytes) -> tuple[str, str]:

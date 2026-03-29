@@ -38,11 +38,15 @@ async def run_analysis(run_id: UUID) -> None:
         await db.commit()
 
         try:
-            # Load all ready documents for this project
+            # Load all documents with extracted text (under_review, reviewed, or approved)
             result = await db.execute(
                 select(Document)
                 .where(Document.project_id == run.project_id)
-                .where(Document.status == DocumentStatus.ready)
+                .where(Document.status.in_([
+                    DocumentStatus.under_review,
+                    DocumentStatus.reviewed,
+                    DocumentStatus.approved,
+                ]))
             )
             documents = list(result.scalars().all())
             document_ids = [doc.id for doc in documents]

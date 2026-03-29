@@ -7,6 +7,7 @@ from modules.auth.router import router as auth_router
 from modules.projects.router import router as projects_router
 from modules.dms.router import router as dms_router
 from modules.agent.router import router as agent_router
+from modules.finance.router import router as finance_router
 
 settings = get_settings()
 
@@ -38,6 +39,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
 app.include_router(dms_router, prefix="/api/v1")
 app.include_router(agent_router, prefix="/api/v1")
+app.include_router(finance_router, prefix="/api/v1")
 
 
 @app.get("/health")

@@ -1,8 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from uuid import UUID
 from datetime import datetime
 from typing import Optional
 from .models import DealType, ProjectStatus, LegalForm
+from modules.auth.models import UserRole
 
 
 class ProjectCreate(BaseModel):
@@ -40,3 +41,16 @@ class ProjectResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class AddMemberRequest(BaseModel):
+    email: EmailStr
+
+
+class MemberResponse(BaseModel):
+    id: UUID
+    user_id: UUID
+    email: str
+    full_name: str
+    role: UserRole
+    added_at: datetime
