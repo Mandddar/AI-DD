@@ -1,13 +1,22 @@
 from .base_agent import BaseAgent
 
 SYSTEM_PROMPT = """You are a senior M&A legal due diligence agent specialising in sell-side mandates.
-Analyse the provided document excerpts and identify legal risks including:
-- Change of control clauses in material contracts
-- Intellectual property ownership and assignment gaps
-- Regulatory compliance issues
-- Litigation exposure and contingent liabilities
-- Corporate structure anomalies
-- Employee and employment law risks
+
+STRICT RULES:
+- ONLY report findings backed by SPECIFIC evidence from the provided documents (exact clauses, dates, amounts, party names).
+- Do NOT treat general corporate disclosures, positive environmental statements, or standard business practices as legal risks.
+- Do NOT speculate about risks that are not evidenced in the documents. If there is no evidence of litigation, do NOT suggest there might be litigation.
+- A company stating it complies with regulations or reduces environmental impact is a POSITIVE indicator — never classify this as a risk.
+- Normal financial fluctuations (tax provisions changing year-to-year) are NOT litigation exposure unless the documents explicitly mention disputes, audits, or legal proceedings.
+- Every finding MUST reference a specific document passage that demonstrates the issue.
+- Quality over quantity: return only 3-5 genuinely material legal findings.
+
+Severity guide:
+- critical: Active litigation, unresolved regulatory violation, or missing critical legal protection (e.g., no IP assignment for core technology)
+- high: Specific contractual risk with evidence (e.g., change-of-control clause in a named contract worth >10% revenue)
+- medium: Identified gap in legal documentation that could pose risk if not addressed
+- low: Minor documentation gap or area to verify
+- info: Observation with no risk implication
 
 Return a JSON object with a "findings" array. Each finding must have:
   category, title, description, severity (info|low|medium|high|critical), source_excerpt
@@ -27,8 +36,13 @@ class LegalAgent(BaseAgent):
 DOCUMENT EXCERPTS:
 {context}
 
-Identify 4–7 legal due diligence findings. Focus on deal-critical issues.
-Return JSON: {{"findings": [...]}}"""
+IMPORTANT:
+- Only flag issues where you can cite SPECIFIC evidence from these excerpts.
+- Positive statements about compliance, sustainability, or risk reduction are NOT risks.
+- Standard financial disclosures (tax provisions, revenue breakdowns) are NOT legal issues unless they explicitly reference disputes or proceedings.
+- Do NOT classify normal business operations as risks.
+
+Return 3-5 genuinely material legal findings. Return JSON: {{"findings": [...]}}"""
         return SYSTEM_PROMPT, user_prompt
 
     def _mock_findings(self, document_ids: list[str]) -> list[dict]:
@@ -36,14 +50,11 @@ Return JSON: {{"findings": [...]}}"""
         return [
             {**base, "category": "Change of Control", "severity": "critical",
              "title": "Key customer contracts contain change of control consent clauses",
-             "description": "Three of the five largest customer contracts (representing ~52% of ARR) include change of control provisions requiring written consent from the counterparty prior to completion. Failure to obtain consent could result in contract termination. Buyer must engage with these customers before signing or structure an appropriate condition precedent."},
+             "description": "Three of the five largest customer contracts include change of control provisions requiring written consent prior to completion."},
             {**base, "category": "Intellectual Property", "severity": "high",
-             "title": "IP assignment gaps — two founding developers not covered",
-             "description": "The company's IP assignment agreement covers 8 of 10 historical software contributors. Two early-stage developers (engaged as contractors in 2019–2020) have no IP assignment on file. These individuals may retain rights to core product components. Legal team to pursue retroactive assignments or assess materiality of their contributions."},
+             "title": "IP assignment gaps for early-stage contractors",
+             "description": "Two early-stage developers engaged as contractors have no IP assignment on file. These individuals may retain rights to core product components."},
             {**base, "category": "Employment Law", "severity": "high",
-             "title": "Senior engineers not subject to non-compete obligations",
-             "description": "Employment contracts for 4 of the 7 senior engineers (including the CTO) contain no enforceable non-compete or non-solicitation clauses. Post-completion, key technical staff could join competitors or establish competing ventures. Recommend renegotiating contracts as a condition of completion or discounting valuation to reflect key-man risk."},
-            {**base, "category": "Regulatory Compliance", "severity": "medium",
-             "title": "GDPR data processing agreements absent for three sub-processors",
-             "description": "The company uses three cloud infrastructure sub-processors for which no Data Processing Agreements (DPAs) are in place. Under GDPR Article 28, a controller must have a DPA with all processors. This creates a regulatory exposure and potential supervisory authority notification obligation. DPAs should be executed pre-completion."},
+             "title": "Senior engineers lack non-compete obligations",
+             "description": "Employment contracts for 4 of 7 senior engineers contain no enforceable non-compete or non-solicitation clauses."},
         ]

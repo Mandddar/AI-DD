@@ -30,12 +30,19 @@ export default function ReportsPage() {
     queryFn: () => reports.list(projectId!),
   });
 
+  const [generateError, setGenerateError] = useState<string | null>(null);
+
   const generate = useMutation({
     mutationFn: () => reports.generate(projectId!, formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports', projectId] });
       setShowForm(false);
+      setGenerateError(null);
       setFormData({ report_type: 'detailed_workstream', workstream: 'legal', title: '' });
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.detail || 'Failed to generate report. Ensure AI analysis has completed first.';
+      setGenerateError(msg);
     },
   });
 
@@ -138,7 +145,12 @@ export default function ReportsPage() {
                 onChange={e => setFormData(d => ({ ...d, title: e.target.value }))} />
             </div>
           </div>
-          <button className="btn-primary px-6 py-2" onClick={() => generate.mutate()}
+          {generateError && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">
+              {generateError}
+            </div>
+          )}
+          <button className="btn-primary px-6 py-2" onClick={() => { setGenerateError(null); generate.mutate(); }}
             disabled={generate.isPending || !formData.title}>
             {generate.isPending ? 'Generating...' : 'Generate Report'}
           </button>
@@ -225,8 +237,12 @@ export default function ReportsPage() {
             <div className="p-5 overflow-y-auto flex-1">
               {(() => {
                 const content = viewReport.edited_content || viewReport.content || {};
-                if (Object.keys(content).length === 0) {
+                const keys = Object.keys(content);
+                if (keys.length === 0) {
                   return <p className="text-secondary italic">No content generated yet. Run AI analysis first, then generate report.</p>;
+                }
+                if (keys.length === 1 && keys[0] === 'Notice') {
+                  return <p className="text-secondary italic">{String(content['Notice'])}</p>;
                 }
                 return (
                   <div className="space-y-4">

@@ -44,20 +44,17 @@ async def submit_basic_data(
     return plan
 
 
-@router.get("/", response_model=AuditPlanOut)
+@router.get("/", response_model=AuditPlanOut | None)
 async def get_audit_plan(
     project_id: UUID,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Get the current audit plan for a project."""
+    """Get the current audit plan for a project. Returns null if none exists."""
     result = await db.execute(
         select(AuditPlan).where(AuditPlan.project_id == project_id)
     )
-    plan = result.scalar_one_or_none()
-    if not plan:
-        raise HTTPException(status_code=404, detail="No audit plan found")
-    return plan
+    return result.scalar_one_or_none()
 
 
 @router.post("/advance-phase", response_model=AuditPlanOut)

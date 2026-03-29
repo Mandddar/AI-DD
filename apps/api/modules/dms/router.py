@@ -135,9 +135,17 @@ async def delete_document(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(current_user),
 ):
+    from sqlalchemy import delete as sql_delete
+    from modules.agent.models import DocumentChunk
+
     doc = await db.get(Document, document_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
+
+    # Delete related rows first (FK constraints)
+    await db.execute(sql_delete(DocumentChunk).where(DocumentChunk.document_id == document_id))
+    await db.execute(sql_delete(DocumentText).where(DocumentText.document_id == document_id))
+
     await delete_file(doc.storage_path)
     await db.delete(doc)
     await db.commit()

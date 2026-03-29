@@ -45,10 +45,10 @@ class BaseAgent(ABC):
 
     async def _call_llm(self, system_prompt: str, user_prompt: str) -> list[dict]:
         """Call Groq API (llama-3.3-70b-versatile) and parse JSON findings array."""
-        from groq import Groq
+        from groq import AsyncGroq
 
-        client = Groq(api_key=settings.groq_api_key)
-        response = client.chat.completions.create(
+        client = AsyncGroq(api_key=settings.groq_api_key)
+        response = await client.chat.completions.create(
             model=settings.groq_model,
             messages=[
                 {"role": "system", "content": system_prompt},

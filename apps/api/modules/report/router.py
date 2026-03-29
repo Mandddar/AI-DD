@@ -25,19 +25,137 @@ async def generate_report(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Generate a new report (AI creates content, human reviews before export)."""
+    """Generate a new report populated with AI findings from completed analyses."""
+    content = await _build_report_content(project_id, data.report_type, data.workstream, db)
+
+    # If no completed analysis or no findings, return error instead of empty report
+    if "Notice" in content and len(content) == 1:
+        raise HTTPException(status_code=400, detail=content["Notice"])
+
     report = Report(
         project_id=project_id,
         created_by=user.id,
         report_type=data.report_type,
         workstream=data.workstream,
         title=data.title,
-        content={},  # Populated by report generation service
+        content=content,
     )
     db.add(report)
     await db.commit()
     await db.refresh(report)
     return report
+
+
+async def _build_report_content(
+    project_id: UUID,
+    report_type: str,
+    workstream: str | None,
+    db: AsyncSession,
+) -> dict:
+    """Pull AI findings from agent_findings and structure them into report content."""
+    from modules.agent.models import AgentFinding, AgentRun, RunStatus
+
+    # Get the latest completed run for this project
+    run_result = await db.execute(
+        select(AgentRun)
+        .where(AgentRun.project_id == project_id)
+        .where(AgentRun.status == RunStatus.completed)
+        .order_by(AgentRun.completed_at.desc())
+        .limit(1)
+    )
+    latest_run = run_result.scalar_one_or_none()
+    if not latest_run:
+        return {"Notice": "No completed AI analysis found. Run AI analysis on this project first, then generate the report."}
+
+    # Get findings — filter by workstream if detailed report
+    findings_query = select(AgentFinding).where(AgentFinding.run_id == latest_run.id)
+    if report_type == "detailed_workstream" and workstream:
+        findings_query = findings_query.where(AgentFinding.agent_type == workstream)
+    findings_query = findings_query.order_by(AgentFinding.severity.desc())
+
+    findings_result = await db.execute(findings_query)
+    findings = list(findings_result.scalars().all())
+
+    if not findings:
+        return {"Notice": f"No findings found for this {'workstream' if workstream else 'project'}. Ensure AI analysis has completed."}
+
+    # Build structured content
+    severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+
+    if report_type == "executive_summary":
+        # Condensed summary — critical and high findings only
+        key_findings = [f for f in findings if f.severity in ("critical", "high")]
+        content = {
+            "Executive Summary": f"This report covers {len(findings)} findings from the AI-assisted due diligence analysis. "
+                                 f"{len(key_findings)} findings are classified as critical or high severity.",
+            "Critical & High Severity Findings": [
+                {
+                    "Title": f.title,
+                    "Category": f.category,
+                    "Severity": f.severity.upper(),
+                    "Workstream": f.agent_type,
+                    "Description": f.description,
+                }
+                for f in key_findings
+            ] if key_findings else "No critical or high severity findings identified.",
+            "Finding Summary by Severity": {
+                severity: len([f for f in findings if f.severity == severity])
+                for severity in ["critical", "high", "medium", "low", "info"]
+                if any(f.severity == severity for f in findings)
+            },
+        }
+    elif report_type == "consolidated":
+        # Group by workstream
+        workstreams_found = sorted(set(f.agent_type for f in findings))
+        content = {
+            "Overall Assessment": f"Consolidated report covering {len(findings)} findings across {len(workstreams_found)} workstream(s): {', '.join(workstreams_found)}.",
+        }
+        for ws in workstreams_found:
+            ws_findings = [f for f in findings if f.agent_type == ws]
+            ws_findings.sort(key=lambda f: severity_order.get(f.severity, 99))
+            content[f"{ws.capitalize()} Workstream ({len(ws_findings)} findings)"] = [
+                {
+                    "Title": f.title,
+                    "Severity": f.severity.upper(),
+                    "Category": f.category,
+                    "Description": f.description,
+                }
+                for f in ws_findings
+            ]
+    else:
+        # Detailed workstream report
+        ws_label = (workstream or "all").capitalize()
+        # Group by category
+        categories = {}
+        for f in findings:
+            cat = f.category or "General"
+            if cat not in categories:
+                categories[cat] = []
+            categories[cat].append(f)
+
+        content = {
+            f"{ws_label} Due Diligence Report": f"Detailed findings for the {ws_label} workstream. Total: {len(findings)} findings.",
+        }
+        for cat, cat_findings in categories.items():
+            cat_findings.sort(key=lambda f: severity_order.get(f.severity, 99))
+            content[cat] = [
+                {
+                    "Title": f.title,
+                    "Severity": f.severity.upper(),
+                    "Description": f.description,
+                    "Source": f.source_excerpts[0] if f.source_excerpts else "—",
+                }
+                for f in cat_findings
+            ]
+
+    content["AI Disclaimer"] = (
+        "This report was generated using Artificial Intelligence. AI-generated results may be inaccurate, "
+        "incomplete, or misleading. Responsibility for audit results, their interpretation, and all decisions "
+        "derived therefrom lies exclusively with the human reviewer. This tool does not replace qualified "
+        "legal, tax, or financial advisory services."
+    )
+
+    return content
 
 
 @router.get("/", response_model=list[ReportOut])
