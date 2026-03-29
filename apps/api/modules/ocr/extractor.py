@@ -55,6 +55,7 @@ def _extract_pdf(data: bytes) -> tuple[str, str]:
     import fitz  # pymupdf
 
     doc = fitz.open(stream=data, filetype="pdf")
+    page_count = doc.page_count
     pages = []
     for page in doc:
         text = page.get_text()
@@ -71,7 +72,7 @@ def _extract_pdf(data: bytes) -> tuple[str, str]:
             except Exception as e:
                 logger.warning("OCR fallback failed for page %d: %s", page.number, e)
     doc.close()
-    return "\n\n".join(pages), str(doc.page_count)
+    return "\n\n".join(pages), str(page_count)
 
 
 def _extract_docx(data: bytes) -> str:

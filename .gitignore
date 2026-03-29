@@ -29,3 +29,6 @@ Thumbs.db
 
 # Build
 *.log
+
+# ignore the uploads
+apps/api/uploads/

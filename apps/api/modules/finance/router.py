@@ -99,6 +99,13 @@ async def run_variance_analysis(
     user: User = Depends(get_current_user),
 ):
     """Trigger variance analysis (internal historical or external benchmark)."""
+    # Require at least one uploaded dataset before running analysis
+    result = await db.execute(
+        select(FinancialDataset).where(FinancialDataset.project_id == project_id).limit(1)
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Upload financial data before running variance analysis")
+
     analysis = VarianceAnalysis(
         project_id=project_id,
         analysis_type=analysis_type,

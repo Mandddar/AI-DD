@@ -24,7 +24,8 @@
       "Bash(psql -U postgres -c \"SELECT 1\")",
       "Bash(where psql:*)",
       "Bash(curl -s http://localhost:8000/docs)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -X POST http://localhost:8000/api/v1/projects/e40c0c1f-5d42-4da7-86f0-7768b78625d0/documents -H \"Authorization: Bearer test\")"
     ]
   }
 }

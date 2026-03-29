@@ -21,7 +21,10 @@ export default function PlanningPage() {
 
   const { data: plan, isLoading } = useQuery({
     queryKey: ['planning', projectId],
-    queryFn: () => planning.getPlan(projectId!),
+    queryFn: () => planning.getPlan(projectId!).catch((err) => {
+      if (err.response?.status === 404) return null;
+      throw err;
+    }),
     retry: false,
   });
 

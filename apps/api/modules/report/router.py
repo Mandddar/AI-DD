@@ -102,10 +102,107 @@ async def finalize_report(
     if not report or report.project_id != project_id:
         raise HTTPException(status_code=404, detail="Report not found")
 
+    # Generate .docx file
     from datetime import datetime, timezone
+    docx_path = _generate_docx(report)
+    report.storage_path = docx_path
     report.is_finalized = True
     report.finalized_by = user.id
     report.finalized_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(report)
     return report
+
+
+@router.get("/{report_id}/download")
+async def download_report(
+    project_id: UUID,
+    report_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Download finalized report as .docx."""
+    report = await db.get(Report, report_id)
+    if not report or report.project_id != project_id:
+        raise HTTPException(status_code=404, detail="Report not found")
+    if not report.storage_path:
+        raise HTTPException(status_code=400, detail="Report file not yet generated. Finalize the report first.")
+
+    import os
+    if not os.path.exists(report.storage_path):
+        raise HTTPException(status_code=404, detail="Report file not found on disk")
+
+    safe_title = "".join(c if c.isalnum() or c in " -_" else "_" for c in report.title)
+    return FileResponse(
+        path=report.storage_path,
+        filename=f"{safe_title}.docx",
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+
+
+def _generate_docx(report) -> str:
+    """Generate a Word .docx file from report content."""
+    from docx import Document as DocxDocument
+    from pathlib import Path
+    import uuid
+
+    doc = DocxDocument()
+
+    # Title
+    doc.add_heading(report.title, level=0)
+
+    # AI Disclaimer
+    disclaimer = doc.add_paragraph()
+    disclaimer.add_run(
+        "Notice: This report uses Artificial Intelligence to support the due diligence review. "
+        "AI-generated results may be inaccurate, incomplete, or misleading. Responsibility for "
+        "audit results lies exclusively with the human reviewer."
+    ).italic = True
+
+    doc.add_paragraph("")
+
+    # Report metadata
+    from datetime import datetime, timezone
+    meta = doc.add_paragraph()
+    meta.add_run(f"Report Type: ").bold = True
+    meta.add_run(f"{report.report_type}\n")
+    if report.workstream:
+        meta.add_run(f"Workstream: ").bold = True
+        meta.add_run(f"{report.workstream}\n")
+    meta.add_run(f"Generated: ").bold = True
+    meta.add_run(f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}\n")
+
+    doc.add_paragraph("")
+
+    # Content — use edited_content if available, otherwise content
+    content = report.edited_content or report.content or {}
+    if isinstance(content, dict):
+        for section_title, section_body in content.items():
+            doc.add_heading(section_title, level=1)
+            if isinstance(section_body, str):
+                doc.add_paragraph(section_body)
+            elif isinstance(section_body, list):
+                for item in section_body:
+                    if isinstance(item, dict):
+                        for k, v in item.items():
+                            p = doc.add_paragraph()
+                            p.add_run(f"{k}: ").bold = True
+                            p.add_run(str(v))
+                    else:
+                        doc.add_paragraph(str(item), style="List Bullet")
+            elif isinstance(section_body, dict):
+                for k, v in section_body.items():
+                    p = doc.add_paragraph()
+                    p.add_run(f"{k}: ").bold = True
+                    p.add_run(str(v))
+            else:
+                doc.add_paragraph(str(section_body))
+    else:
+        doc.add_paragraph(str(content))
+
+    # Save
+    uploads_dir = Path(__file__).parent.parent.parent / "uploads" / "reports"
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    filepath = uploads_dir / f"{uuid.uuid4()}.docx"
+    doc.save(str(filepath))
+    return str(filepath)

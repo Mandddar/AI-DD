@@ -35,4 +35,7 @@ export const reports = {
 
   finalize: (projectId: string, reportId: string) =>
     api.post<Report>(`/projects/${projectId}/reports/${reportId}/finalize`).then(r => r.data),
+
+  downloadUrl: (projectId: string, reportId: string) =>
+    `${api.defaults.baseURL}/projects/${projectId}/reports/${reportId}/download`,
 };

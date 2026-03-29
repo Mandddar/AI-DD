@@ -98,9 +98,11 @@ export default function FinancePage() {
           </h2>
           <div className="flex gap-2">
             <button className="btn-ghost text-sm px-3 py-1.5" onClick={() => runAnalysis.mutate('internal_historical')}
-              disabled={runAnalysis.isPending}>Internal Historical</button>
+              disabled={runAnalysis.isPending || !datasets?.length}
+              title={!datasets?.length ? 'Upload financial data first' : ''}>Internal Historical</button>
             <button className="btn-ghost text-sm px-3 py-1.5" onClick={() => runAnalysis.mutate('external_benchmark')}
-              disabled={runAnalysis.isPending}>External Benchmark</button>
+              disabled={runAnalysis.isPending || !datasets?.length}
+              title={!datasets?.length ? 'Upload financial data first' : ''}>External Benchmark</button>
           </div>
         </div>
         {variances?.length ? (

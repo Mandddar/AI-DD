@@ -52,6 +52,8 @@ async def _process_document(document_id: UUID, file_bytes: bytes, mime_type: str
                 doc.page_count = page_count
             await db.commit()
         except Exception as e:
+            import logging
+            logging.getLogger(__name__).error("Document processing failed for %s: %s", document_id, e)
             doc.status = DocumentStatus.failed
             await db.commit()
 
