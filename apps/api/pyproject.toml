@@ -1,7 +1,60 @@
 [project]
-name = "api"
+name = "ai-dd-api"
 version = "0.1.0"
-description = "Add your description here"
+description = "AI-powered M&A Due Diligence Platform - Backend API"
 readme = "README.md"
-requires-python = ">=3.10"
-dependencies = []
+requires-python = ">=3.12"
+dependencies = [
+    # ── Core Framework ──────────────────────────────────────────
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.6",
+    "python-multipart>=0.0.12",
+    "httpx>=0.27.2",
+    "aiofiles>=24.1.0",
+
+    # ── Database & ORM (auth, project, all modules) ─────────────
+    "sqlalchemy[asyncio]>=2.0.36",
+    "psycopg[binary]>=3.3.3",
+    "alembic>=1.13.3",
+
+    # ── Auth Module ─────────────────────────────────────────────
+    "python-jose[cryptography]>=3.3.0",
+    "bcrypt>=4.0.0",
+    "pydantic[email]>=2.9.0",
+    "pydantic-settings>=2.5.0",
+    "python-dotenv>=1.0.1",
+
+    # ── DMS Module (document parsing) ───────────────────────────
+    "pymupdf>=1.24.0",
+    "python-docx>=1.1.2",
+    "openpyxl>=3.1.5",
+    "pandas>=2.2.0",
+
+    # ── OCR Module ──────────────────────────────────────────────
+    "pytesseract>=0.3.10",
+    "Pillow>=10.4.0",
+
+    # ── Agent Module (LLM + async queue) ────────────────────────
+    "groq>=0.9.0",
+    "celery>=5.4.0",
+    "redis>=5.0.0",
+
+    # ── Planning Module (prompt templates + Excel export) ───────
+    "jinja2>=3.1.4",
+
+    # ── Finance Module (data processing + variance analysis) ────
+    "numpy>=1.26.0",
+
+    # ── Knowledge Module (PII detection for anonymization) ──────
+    "presidio-analyzer>=2.2.0",
+
+    # ── Report Module (Word + Excel generation) ─────────────────
+    # python-docx, openpyxl, jinja2 already listed above
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["core", "modules"]

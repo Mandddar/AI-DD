@@ -1,0 +1,157 @@
+"""
+Planning Module — API endpoints for the 5-phase interactive audit planning process.
+
+Tech: FastAPI + Groq API + openpyxl (Excel export) + jinja2 (prompt templates)
+"""
+from uuid import UUID
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from core.database import get_db
+from modules.auth.dependencies import get_current_user
+from modules.auth.models import User
+from .models import AuditPlan, RequestListItem, PlanningPhase
+from .schemas import BasicDataInput, DialogAnswer, RequestItemUpdate, AuditPlanOut, RequestItemOut
+
+router = APIRouter(prefix="/projects/{project_id}/planning", tags=["planning"])
+
+
+@router.post("/basic-data", response_model=AuditPlanOut, status_code=status.HTTP_201_CREATED)
+async def submit_basic_data(
+    project_id: UUID,
+    data: BasicDataInput,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Phase 1: Submit basic company data to start audit planning."""
+    # Check if plan already exists
+    result = await db.execute(
+        select(AuditPlan).where(AuditPlan.project_id == project_id)
+    )
+    existing = result.scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=400, detail="Audit plan already exists for this project")
+
+    plan = AuditPlan(
+        project_id=project_id,
+        created_by=user.id,
+        current_phase=PlanningPhase.basic_data,
+        basic_data=data.model_dump(),
+    )
+    db.add(plan)
+    await db.commit()
+    await db.refresh(plan)
+    return plan
+
+
+@router.get("/", response_model=AuditPlanOut)
+async def get_audit_plan(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Get the current audit plan for a project."""
+    result = await db.execute(
+        select(AuditPlan).where(AuditPlan.project_id == project_id)
+    )
+    plan = result.scalar_one_or_none()
+    if not plan:
+        raise HTTPException(status_code=404, detail="No audit plan found")
+    return plan
+
+
+@router.post("/advance-phase", response_model=AuditPlanOut)
+async def advance_phase(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Advance the audit plan to the next phase (triggers AI processing)."""
+    result = await db.execute(
+        select(AuditPlan).where(AuditPlan.project_id == project_id)
+    )
+    plan = result.scalar_one_or_none()
+    if not plan:
+        raise HTTPException(status_code=404, detail="No audit plan found")
+
+    # Phase transitions — AI processing happens in service layer
+    phase_order = list(PlanningPhase)
+    current_idx = phase_order.index(plan.current_phase)
+    if current_idx >= len(phase_order) - 1:
+        raise HTTPException(status_code=400, detail="Already at final phase")
+
+    plan.current_phase = phase_order[current_idx + 1]
+    await db.commit()
+    await db.refresh(plan)
+    return plan
+
+
+@router.post("/approve", response_model=AuditPlanOut)
+async def approve_plan(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Phase 4: Human approves the audit plan — agents may now begin work."""
+    result = await db.execute(
+        select(AuditPlan).where(AuditPlan.project_id == project_id)
+    )
+    plan = result.scalar_one_or_none()
+    if not plan:
+        raise HTTPException(status_code=404, detail="No audit plan found")
+
+    from datetime import datetime, timezone
+    plan.is_approved = True
+    plan.approved_by = user.id
+    plan.approved_at = datetime.now(timezone.utc)
+    plan.current_phase = PlanningPhase.request_list
+    await db.commit()
+    await db.refresh(plan)
+    return plan
+
+
+@router.get("/request-list", response_model=list[RequestItemOut])
+async def get_request_list(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Get all request list items for this project's audit plan."""
+    plan_result = await db.execute(
+        select(AuditPlan).where(AuditPlan.project_id == project_id)
+    )
+    plan = plan_result.scalar_one_or_none()
+    if not plan:
+        raise HTTPException(status_code=404, detail="No audit plan found")
+
+    result = await db.execute(
+        select(RequestListItem)
+        .where(RequestListItem.audit_plan_id == plan.id)
+        .order_by(RequestListItem.item_number)
+    )
+    return list(result.scalars().all())
+
+
+@router.patch("/request-list/{item_id}", response_model=RequestItemOut)
+async def update_request_item(
+    project_id: UUID,
+    item_id: UUID,
+    update: RequestItemUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Update status/priority of a request list item."""
+    item = await db.get(RequestListItem, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Request item not found")
+
+    if update.status is not None:
+        item.status = update.status
+    if update.priority is not None:
+        item.priority = update.priority
+    if update.answer_document is not None:
+        item.answer_document = update.answer_document
+
+    await db.commit()
+    await db.refresh(item)
+    return item

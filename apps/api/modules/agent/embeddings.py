@@ -1,59 +1,34 @@
 """
-RAG pipeline: chunk documents, generate embeddings, vector similarity search.
-Falls back to keyword-order when Vertex AI is not configured (dev mode).
+RAG pipeline: chunk documents and retrieve relevant pages via PostgreSQL full-text search.
+No vectors needed — uses plainto_tsquery + ts_rank for relevance ranking.
 """
 import logging
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from core.config import get_settings
+from sqlalchemy import select, func, text
 from modules.dms.models import DocumentText
 from .models import DocumentChunk
 
 logger = logging.getLogger(__name__)
-settings = get_settings()
 
 CHUNK_SIZE = 1500
 CHUNK_OVERLAP = 300
-EMBEDDING_DIM = 768
 
 
-def _chunk_text(text: str) -> list[str]:
+def _chunk_text(full_text: str) -> list[str]:
     chunks: list[str] = []
     start = 0
-    while start < len(text):
+    while start < len(full_text):
         end = start + CHUNK_SIZE
-        chunks.append(text[start:end])
-        if end >= len(text):
+        chunks.append(full_text[start:end])
+        if end >= len(full_text):
             break
         start += CHUNK_SIZE - CHUNK_OVERLAP
     return chunks
 
 
-def _is_vertex_configured() -> bool:
-    return bool(settings.google_cloud_project)
-
-
-async def _embed_texts(texts: list[str]) -> list[list[float]]:
-    """Vertex AI text-embedding-004, or zero vectors in dev mode."""
-    if not _is_vertex_configured():
-        return [[0.0] * EMBEDDING_DIM for _ in texts]
-
-    import asyncio
-
-    def _call():
-        import vertexai
-        from vertexai.language_models import TextEmbeddingInput, TextEmbeddingModel
-        vertexai.init(project=settings.google_cloud_project, location=settings.vertex_ai_location)
-        model = TextEmbeddingModel.from_pretrained("text-embedding-004")
-        inputs = [TextEmbeddingInput(t, "RETRIEVAL_DOCUMENT") for t in texts]
-        return [e.values for e in model.get_embeddings(inputs)]
-
-    return await asyncio.to_thread(_call)
-
-
-async def ensure_document_embedded(document_id: UUID, db: AsyncSession) -> None:
-    """Idempotent: chunk and embed a document if not already done."""
+async def ensure_document_indexed(document_id: UUID, db: AsyncSession) -> None:
+    """Idempotent: chunk a document and build FTS index if not already done."""
     existing = await db.execute(
         select(DocumentChunk).where(DocumentChunk.document_id == document_id).limit(1)
     )
@@ -71,42 +46,48 @@ async def ensure_document_embedded(document_id: UUID, db: AsyncSession) -> None:
     if not chunks:
         return
 
-    embeddings = await _embed_texts(chunks)
-    for idx, (chunk, emb) in enumerate(zip(chunks, embeddings)):
+    for idx, chunk in enumerate(chunks):
         db.add(DocumentChunk(
             document_id=document_id,
             chunk_index=idx,
             chunk_text=chunk,
-            embedding=emb,
+            search_vector=func.to_tsvector("english", chunk),
         ))
     await db.commit()
 
 
-async def similarity_search(
+async def fts_search(
     query: str,
     document_ids: list[UUID],
     db: AsyncSession,
     top_k: int = 10,
 ) -> list[DocumentChunk]:
-    """Return top_k most relevant chunks from the given documents."""
-    if not document_ids:
+    """Return top_k most relevant chunks using PostgreSQL full-text search.
+    Uses plainto_tsquery + ts_rank — no vectors, no external embeddings.
+    """
+    if not document_ids or not query.strip():
         return []
 
-    if _is_vertex_configured():
-        query_emb = (await _embed_texts([query]))[0]
-        result = await db.execute(
-            select(DocumentChunk)
-            .where(DocumentChunk.document_id.in_(document_ids))
-            .where(DocumentChunk.embedding.isnot(None))
-            .order_by(DocumentChunk.embedding.cosine_distance(query_emb))
-            .limit(top_k)
-        )
-    else:
-        # Dev fallback: return first N chunks in document order
-        result = await db.execute(
-            select(DocumentChunk)
-            .where(DocumentChunk.document_id.in_(document_ids))
-            .limit(top_k)
-        )
+    ts_query = func.plainto_tsquery("english", query)
+    rank = func.ts_rank(DocumentChunk.search_vector, ts_query)
 
-    return list(result.scalars().all())
+    result = await db.execute(
+        select(DocumentChunk)
+        .where(DocumentChunk.document_id.in_(document_ids))
+        .where(DocumentChunk.search_vector.op("@@")(ts_query))
+        .order_by(rank.desc())
+        .limit(top_k)
+    )
+    chunks = list(result.scalars().all())
+
+    # Fallback: if FTS returns nothing, return first N chunks in document order
+    if not chunks:
+        result = await db.execute(
+            select(DocumentChunk)
+            .where(DocumentChunk.document_id.in_(document_ids))
+            .order_by(DocumentChunk.chunk_index)
+            .limit(top_k)
+        )
+        chunks = list(result.scalars().all())
+
+    return chunks

@@ -9,7 +9,7 @@ from sqlalchemy import select
 from core.database import AsyncSessionLocal
 from modules.dms.models import Document, DocumentStatus
 from .models import AgentRun, AgentFinding, RunStatus
-from .embeddings import ensure_document_embedded
+from .embeddings import ensure_document_indexed
 from .planning_agent import PlanningAgent
 from .legal_agent import LegalAgent
 from .tax_agent import TaxAgent
@@ -52,7 +52,7 @@ async def run_analysis(run_id: UUID) -> None:
 
             # Chunk and embed every document (idempotent)
             for doc in documents:
-                await ensure_document_embedded(doc.id, db)
+                await ensure_document_indexed(doc.id, db)
                 run.processed_documents += 1
                 await db.commit()
 

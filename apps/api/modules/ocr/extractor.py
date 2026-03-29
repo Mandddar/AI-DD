@@ -1,10 +1,19 @@
 """
 Text extraction from uploaded documents.
-Supports: PDF, Word (.docx), Excel (.xlsx/.xls), plain text.
-When GCP is available, swap extract_text() to call Google Document AI.
+Supports: PDF, Word (.docx), Excel (.xlsx/.xls), CSV, TSV, plain text, Images.
+
+Libraries:
+  - pymupdf (fitz) — PDF parsing + PDF-to-image for OCR fallback
+  - python-docx — Word .docx parsing
+  - openpyxl — Excel .xlsx parsing
+  - pandas — CSV / TSV parsing
+  - pytesseract + Pillow — OCR for scanned/image documents
 """
 import io
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def extract_text(file_bytes: bytes, mime_type: str, filename: str) -> tuple[str, str | None]:
@@ -29,20 +38,40 @@ def extract_text(file_bytes: bytes, mime_type: str, filename: str) -> tuple[str,
     ) or ext in (".xlsx", ".xls"):
         return _extract_excel(file_bytes), None
 
-    if mime_type.startswith("text/") or ext in (".txt", ".csv", ".tsv"):
+    if ext in (".csv", ".tsv") or mime_type in ("text/csv", "text/tab-separated-values"):
+        return _extract_csv_tsv(file_bytes, ext), None
+
+    if mime_type.startswith("text/") or ext == ".txt":
         return file_bytes.decode("utf-8", errors="replace"), None
+
+    if mime_type.startswith("image/") or ext in (".jpg", ".jpeg", ".png", ".tiff", ".tif", ".bmp"):
+        return _extract_image_ocr(file_bytes), None
 
     return "", None
 
 
 def _extract_pdf(data: bytes) -> tuple[str, str]:
-    from pypdf import PdfReader
-    reader = PdfReader(io.BytesIO(data))
+    """Extract text from PDF using pymupdf. Falls back to OCR for scanned pages."""
+    import fitz  # pymupdf
+
+    doc = fitz.open(stream=data, filetype="pdf")
     pages = []
-    for page in reader.pages:
-        text = page.extract_text() or ""
-        pages.append(text)
-    return "\n\n".join(pages), str(len(reader.pages))
+    for page in doc:
+        text = page.get_text()
+        if text.strip():
+            pages.append(text)
+        else:
+            # Scanned page — OCR fallback via pytesseract
+            try:
+                pix = page.get_pixmap(dpi=300)
+                img_bytes = pix.tobytes("png")
+                ocr_text = _ocr_image_bytes(img_bytes)
+                if ocr_text.strip():
+                    pages.append(ocr_text)
+            except Exception as e:
+                logger.warning("OCR fallback failed for page %d: %s", page.number, e)
+    doc.close()
+    return "\n\n".join(pages), str(doc.page_count)
 
 
 def _extract_docx(data: bytes) -> str:
@@ -62,3 +91,32 @@ def _extract_excel(data: bytes) -> str:
             if row_text.strip():
                 parts.append(row_text)
     return "\n".join(parts)
+
+
+def _extract_csv_tsv(data: bytes, ext: str) -> str:
+    """Parse CSV/TSV files using pandas."""
+    import pandas as pd
+    sep = "\t" if ext == ".tsv" else ","
+    try:
+        df = pd.read_csv(io.BytesIO(data), sep=sep)
+        return df.to_string(index=False)
+    except Exception as e:
+        logger.warning("pandas CSV/TSV parse failed: %s, falling back to raw text", e)
+        return data.decode("utf-8", errors="replace")
+
+
+def _extract_image_ocr(data: bytes) -> str:
+    """OCR an image file using pytesseract + Pillow."""
+    return _ocr_image_bytes(data)
+
+
+def _ocr_image_bytes(img_bytes: bytes) -> str:
+    """Run pytesseract OCR on raw image bytes."""
+    try:
+        from PIL import Image
+        import pytesseract
+        image = Image.open(io.BytesIO(img_bytes))
+        return pytesseract.image_to_string(image, lang="eng")
+    except Exception as e:
+        logger.error("pytesseract OCR failed: %s", e)
+        return ""

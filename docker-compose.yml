@@ -1,6 +1,6 @@
 services:
   db:
-    image: pgvector/pgvector:pg16
+    image: postgres:16
     environment:
       POSTGRES_USER: aidd
       POSTGRES_PASSWORD: aidd_dev_pass
@@ -16,6 +16,18 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   api:
     build:
       context: ./apps/api
@@ -25,13 +37,36 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://aidd:aidd_dev_pass@db:5432/aidd
       SECRET_KEY: dev-secret-change-in-prod-32chars!!
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      REDIS_URL: redis://redis:6379/0
       ENVIRONMENT: development
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./apps/api:/app
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  celery-worker:
+    build:
+      context: ./apps/api
+      dockerfile: ../../infrastructure/docker/api.Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://aidd:aidd_dev_pass@db:5432/aidd
+      SECRET_KEY: dev-secret-change-in-prod-32chars!!
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: development
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/api:/app
+    command: celery -A celery_app worker --loglevel=info
 
   web:
     build:
@@ -47,3 +82,4 @@ services:
 
 volumes:
   pgdata:
+  redisdata:

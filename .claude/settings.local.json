@@ -4,7 +4,12 @@
       "Bash(npm create:*)",
       "Bash(npm install:*)",
       "Bash(npx tailwindcss:*)",
-      "Bash(.venv/Scripts/pip install:*)"
+      "Bash(.venv/Scripts/pip install:*)",
+      "Bash(uv sync:*)",
+      "Bash(.venv/Scripts/python -c \"import fastapi, sqlalchemy, groq, celery, redis, pymupdf, pytesseract, pandas, numpy, openpyxl, docx, jinja2, presidio_analyzer, PIL, jose, bcrypt, alembic, aiofiles; print\\(''All imports OK''\\)\")",
+      "Bash(where tesseract:*)",
+      "Bash(docker --version)",
+      "Bash(docker compose:*)"
     ]
   }
 }

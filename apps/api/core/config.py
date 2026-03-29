@@ -9,24 +9,36 @@ class Settings(BaseSettings):
     app_name: str = "AI DD API"
     environment: str = "development"
 
-    # Database
+    # Database — PostgreSQL (shared across all modules)
     database_url: str = "postgresql+psycopg://aidd:aidd_dev_pass@localhost:5432/aidd"
 
-    # Auth
+    # Auth — JWT
     secret_key: str = "change-this-to-a-random-32-char-string"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 30
 
-    # Google Cloud — EU only, non-negotiable
-    google_cloud_project: str = ""
-    google_cloud_region: str = "europe-west3"
-    gcs_bucket_name: str = "aidd-documents-dev"
-    vertex_ai_location: str = "europe-west3"
+    # AI — Groq API (llama-3.3-70b-versatile, free tier)
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+
+    # Async Queue — Celery + Redis (Upstash free tier)
+    redis_url: str = "redis://localhost:6379/0"
+
+    # Storage — local filesystem for dev, GCS for prod
+    upload_dir: str = "uploads"
 
     @property
     def is_dev(self) -> bool:
         return self.environment == "development"
+
+    @property
+    def celery_broker_url(self) -> str:
+        return self.redis_url
+
+    @property
+    def celery_result_backend(self) -> str:
+        return self.redis_url
 
 
 @lru_cache

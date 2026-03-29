@@ -1,9 +1,8 @@
 import enum
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, DateTime, Enum as SAEnum, ForeignKey, Integer, Text, JSON
-from sqlalchemy.dialects.postgresql import UUID
-from pgvector.sqlalchemy import Vector
+from sqlalchemy import Column, String, DateTime, Enum as SAEnum, ForeignKey, Integer, Text, JSON, Index
+from sqlalchemy.dialects.postgresql import UUID, TSVECTOR
 from core.database import Base
 
 
@@ -77,10 +76,16 @@ class AgentFinding(Base):
 
 
 class DocumentChunk(Base):
+    """Document chunks with PostgreSQL full-text search (no vectors needed)."""
     __tablename__ = "document_chunks"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id"), nullable=False, index=True)
     chunk_index = Column(Integer, nullable=False)
     chunk_text = Column(Text, nullable=False)
-    embedding = Column(Vector(768), nullable=True)  # null until embedded
+    # PostgreSQL FTS tsvector column — populated via trigger or on insert
+    search_vector = Column(TSVECTOR, nullable=True)
+
+    __table_args__ = (
+        Index("ix_document_chunks_search", "search_vector", postgresql_using="gin"),
+    )
