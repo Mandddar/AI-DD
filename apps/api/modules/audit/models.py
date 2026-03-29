@@ -77,7 +77,7 @@ class AuditLog(Base):
 
     # Details
     description = Column(Text, nullable=True)
-    metadata = Column(JSON, nullable=True)  # Additional context
+    extra_data = Column(JSON, nullable=True)  # Additional context
 
     # Where
     ip_address = Column(String(45), nullable=True)

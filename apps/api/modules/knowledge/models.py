@@ -24,7 +24,7 @@ class ProjectKnowledge(Base):
     content = Column(Text, nullable=False)
 
     # Structured data (JSONB for flexible queries)
-    metadata = Column(JSONB, nullable=True)  # {severity, confidence, source_docs, ...}
+    extra_data = Column(JSONB, nullable=True)  # {severity, confidence, source_docs, ...}
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 

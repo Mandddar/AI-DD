@@ -12,7 +12,7 @@ class AuditLogOut(BaseModel):
     resource_type: Optional[str] = None
     resource_id: Optional[str] = None
     description: Optional[str] = None
-    metadata: Optional[dict] = None
+    extra_data: Optional[dict] = None
     ip_address: Optional[str] = None
     created_at: datetime
 

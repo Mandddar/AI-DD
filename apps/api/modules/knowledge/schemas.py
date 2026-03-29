@@ -11,7 +11,7 @@ class ProjectKnowledgeOut(BaseModel):
     workstream: Optional[str] = None
     title: str
     content: str
-    metadata: Optional[dict] = None
+    extra_data: Optional[dict] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

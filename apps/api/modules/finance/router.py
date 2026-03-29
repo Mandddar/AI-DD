@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
-from modules.auth.dependencies import get_current_user
+from modules.auth.dependencies import current_user as get_current_user
 from modules.auth.models import User
 from .models import FinancialDataset, FinancialLineItem, VarianceAnalysis
 from .schemas import FinancialDatasetOut, LineItemOut, VarianceAnalysisOut
