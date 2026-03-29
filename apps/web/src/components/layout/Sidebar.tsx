@@ -1,5 +1,8 @@
 import { NavLink, useParams } from "react-router-dom";
-import { LayoutDashboard, FolderOpen, FileText, Brain, BarChart3, Settings, LogOut } from "lucide-react";
+import {
+  LayoutDashboard, FolderOpen, FileText, Brain, BarChart3,
+  ClipboardList, TrendingUp, Shield, Settings, LogOut
+} from "lucide-react";
 import { useAuthStore } from "../../store/auth";
 import { cn } from "../../lib/utils";
 
@@ -7,20 +10,28 @@ function SidebarContent() {
   const { projectId } = useParams<{ projectId?: string }>();
   const { user, logout } = useAuthStore();
 
+  const projectLinks = projectId
+    ? [
+        { to: `/projects/${projectId}/documents`, icon: FileText, label: "Documents" },
+        { to: `/projects/${projectId}/planning`, icon: ClipboardList, label: "Planning" },
+        { to: `/projects/${projectId}/analysis`, icon: Brain, label: "AI Analysis" },
+        { to: `/projects/${projectId}/finance`, icon: TrendingUp, label: "Finance" },
+        { to: `/projects/${projectId}/reports`, icon: BarChart3, label: "Reports" },
+      ]
+    : [
+        { to: "#", icon: FileText, label: "Documents", disabled: true },
+        { to: "#", icon: ClipboardList, label: "Planning", disabled: true },
+        { to: "#", icon: Brain, label: "AI Analysis", disabled: true },
+        { to: "#", icon: TrendingUp, label: "Finance", disabled: true },
+        { to: "#", icon: BarChart3, label: "Reports", disabled: true },
+      ];
+
   const NAV = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", end: true },
     { to: "/projects", icon: FolderOpen, label: "Deals", end: true },
-    ...(projectId
-      ? [
-          { to: `/projects/${projectId}/documents`, icon: FileText, label: "Documents", end: false },
-          { to: `/projects/${projectId}/analysis`, icon: Brain, label: "AI Analysis", end: false },
-        ]
-      : [
-          { to: "#", icon: FileText, label: "Documents", end: true, disabled: true },
-          { to: "#", icon: Brain, label: "AI Analysis", end: true, disabled: true },
-        ]),
-    { to: "/reports", icon: BarChart3, label: "Reports", end: true },
-  ] as const;
+    ...projectLinks.map(l => ({ ...l, end: false })),
+    { to: "/audit", icon: Shield, label: "Audit Trail", end: true },
+  ];
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-canvas-border bg-canvas-subtle">
@@ -36,40 +47,27 @@ function SidebarContent() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-0.5 p-3">
-        {NAV.map((item) => {
-          const Icon = item.icon;
-          const disabled = "disabled" in item && item.disabled;
-          if (disabled) {
-            return (
-              <span
-                key={item.label}
-                className="flex items-center gap-3 rounded px-3 py-2 text-sm text-text-muted/50 cursor-not-allowed"
-              >
-                <Icon size={15} />
-                {item.label}
-              </span>
-            );
-          }
-          return (
-            <NavLink
-              key={item.label}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded px-3 py-2 text-sm transition-colors",
-                  isActive
-                    ? "bg-gold/10 text-gold ring-1 ring-gold/20"
-                    : "text-text-secondary hover:bg-surface hover:text-text-primary"
-                )
-              }
-            >
-              <Icon size={15} />
-              {item.label}
-            </NavLink>
-          );
-        })}
+      <nav className="flex-1 space-y-0.5 p-3 overflow-y-auto">
+        {projectId && (
+          <p className="px-3 pt-2 pb-1 text-[10px] text-text-muted uppercase tracking-widest">General</p>
+        )}
+        {NAV.slice(0, 2).map((item) => (
+          <NavItem key={item.label} item={item} />
+        ))}
+
+        {projectId && (
+          <p className="px-3 pt-4 pb-1 text-[10px] text-text-muted uppercase tracking-widest">Project</p>
+        )}
+        {NAV.slice(2, -1).map((item) => (
+          <NavItem key={item.label} item={item} />
+        ))}
+
+        {projectId && (
+          <p className="px-3 pt-4 pb-1 text-[10px] text-text-muted uppercase tracking-widest">System</p>
+        )}
+        {NAV.slice(-1).map((item) => (
+          <NavItem key={item.label} item={item} />
+        ))}
       </nav>
 
       {/* User + logout */}
@@ -95,6 +93,38 @@ function SidebarContent() {
         </div>
       </div>
     </aside>
+  );
+}
+
+function NavItem({ item }: { item: any }) {
+  const Icon = item.icon;
+  const disabled = "disabled" in item && item.disabled;
+
+  if (disabled) {
+    return (
+      <span className="flex items-center gap-3 rounded px-3 py-2 text-sm text-text-muted/50 cursor-not-allowed">
+        <Icon size={15} />
+        {item.label}
+      </span>
+    );
+  }
+
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center gap-3 rounded px-3 py-2 text-sm transition-colors",
+          isActive
+            ? "bg-gold/10 text-gold ring-1 ring-gold/20"
+            : "text-text-secondary hover:bg-surface hover:text-text-primary"
+        )
+      }
+    >
+      <Icon size={15} />
+      {item.label}
+    </NavLink>
   );
 }
 

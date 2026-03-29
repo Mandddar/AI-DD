@@ -13,6 +13,10 @@ import { DocumentsPage } from "./pages/documents/DocumentsPage";
 import { AgentsPage } from "./pages/agents/AgentsPage";
 import { AgentRunPage } from "./pages/agents/AgentRunPage";
 import { LandingPage } from "./pages/LandingPage";
+import PlanningPage from "./pages/planning/PlanningPage";
+import FinancePage from "./pages/finance/FinancePage";
+import ReportsPage from "./pages/reports/ReportsPage";
+import AuditLogsPage from "./pages/audit/AuditLogsPage";
 
 const qc = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -69,8 +73,12 @@ function AppRoutes() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/projects/:projectId/documents" element={<DocumentsPage />} />
+        <Route path="/projects/:projectId/planning" element={<PlanningPage />} />
         <Route path="/projects/:projectId/analysis" element={<AgentsPage />} />
         <Route path="/projects/:projectId/analysis/:runId" element={<AgentRunPage />} />
+        <Route path="/projects/:projectId/finance" element={<FinancePage />} />
+        <Route path="/projects/:projectId/reports" element={<ReportsPage />} />
+        <Route path="/audit" element={<AuditLogsPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>

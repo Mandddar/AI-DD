@@ -23,7 +23,8 @@
       "Bash(tasklist //FI \"PID eq 8384\")",
       "Bash(psql -U postgres -c \"SELECT 1\")",
       "Bash(where psql:*)",
-      "Bash(curl -s http://localhost:8000/docs)"
+      "Bash(curl -s http://localhost:8000/docs)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)"
     ]
   }
 }
