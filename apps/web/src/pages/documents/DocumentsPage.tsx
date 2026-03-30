@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { documentsApi, type Document, type Workstream } from "../../api/documents";
 import { cn } from "../../lib/utils";
+import { usePermissions } from "../../hooks/usePermissions";
 
 const WORKSTREAMS: { value: Workstream; label: string }[] = [
   { value: "general", label: "General" },
@@ -85,6 +86,7 @@ function DropZone({ onFiles }: { onFiles: (files: File[]) => void }) {
 export function DocumentsPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const qc = useQueryClient();
+  const perms = usePermissions();
   const [workstream, setWorkstream] = useState<Workstream>("general");
   const [uploading, setUploading] = useState<string[]>([]);
 
@@ -126,28 +128,36 @@ export function DocumentsPage() {
         </div>
 
         {/* Workstream selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-text-muted">Upload to:</span>
-          <div className="flex rounded border border-canvas-border overflow-hidden">
-            {WORKSTREAMS.map((ws) => (
-              <button
-                key={ws.value}
-                onClick={() => setWorkstream(ws.value)}
-                className={cn(
-                  "px-3 py-1.5 text-xs font-medium transition-colors",
-                  workstream === ws.value
-                    ? "bg-gold text-canvas"
-                    : "bg-canvas-card text-text-secondary hover:bg-surface"
-                )}
-              >
-                {ws.label}
-              </button>
-            ))}
+        {perms.canUploadDocuments && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-text-muted">Upload to:</span>
+            <div className="flex rounded border border-canvas-border overflow-hidden">
+              {WORKSTREAMS.map((ws) => (
+                <button
+                  key={ws.value}
+                  onClick={() => setWorkstream(ws.value)}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium transition-colors",
+                    workstream === ws.value
+                      ? "bg-gold text-canvas"
+                      : "bg-canvas-card text-text-secondary hover:bg-surface"
+                  )}
+                >
+                  {ws.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      <DropZone onFiles={handleFiles} />
+      {perms.isReadOnly && (
+        <div className="rounded-lg border border-canvas-border bg-surface/50 px-4 py-2.5 text-sm text-text-secondary">
+          Read-only access — you can view and download approved documents.
+        </div>
+      )}
+
+      {perms.canUploadDocuments && <DropZone onFiles={handleFiles} />}
 
       {/* Uploading indicators */}
       {uploading.length > 0 && (
@@ -204,13 +214,15 @@ export function DocumentsPage() {
                   <Download size={14} />
                 </a>
 
-                <button
-                  onClick={() => deleteMutation.mutate(doc.id)}
-                  className="text-text-muted hover:text-risk-high transition-colors"
-                  title="Delete"
-                >
-                  <Trash2 size={14} />
-                </button>
+                {perms.canDeleteDocuments && (
+                  <button
+                    onClick={() => deleteMutation.mutate(doc.id)}
+                    className="text-text-muted hover:text-risk-high transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
               </div>
             </div>
           ))}

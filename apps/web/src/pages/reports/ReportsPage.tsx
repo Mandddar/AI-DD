@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { reports, type ReportCreate, type Report } from '../../api/reports';
+import { usePermissions } from '../../hooks/usePermissions';
 import {
   FileText, Plus, Download, CheckCircle2, Edit3, Loader2, Lock, Eye, X, Save
 } from 'lucide-react';
@@ -15,6 +16,7 @@ const REPORT_TYPES = [
 export default function ReportsPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const queryClient = useQueryClient();
+  const perms = usePermissions();
   const [showForm, setShowForm] = useState(false);
   const [viewReport, setViewReport] = useState<Report | null>(null);
   const [editReport, setEditReport] = useState<Report | null>(null);
@@ -109,13 +111,15 @@ export default function ReportsPage() {
           <FileText className="w-7 h-7 text-gold" />
           <h1 className="text-2xl font-display font-bold text-primary">Reports</h1>
         </div>
-        <button className="btn-primary px-4 py-2 flex items-center gap-2" onClick={() => setShowForm(!showForm)}>
-          <Plus className="w-4 h-4" /> Generate Report
-        </button>
+        {perms.canManageReports && (
+          <button className="btn-primary px-4 py-2 flex items-center gap-2" onClick={() => setShowForm(!showForm)}>
+            <Plus className="w-4 h-4" /> Generate Report
+          </button>
+        )}
       </div>
 
       {/* Generate Form */}
-      {showForm && (
+      {showForm && perms.canManageReports && (
         <div className="card p-6 space-y-4">
           <h2 className="text-lg font-display font-semibold text-primary">New Report</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -158,9 +162,13 @@ export default function ReportsPage() {
       )}
 
       {/* Report List */}
-      {reportList?.length ? (
+      {(() => {
+        const visibleReports = perms.onlyFinalizedReports
+          ? reportList?.filter(report => report.is_finalized === true)
+          : reportList;
+        return visibleReports?.length ? (
         <div className="space-y-4">
-          {reportList.map(report => (
+          {visibleReports.map(report => (
             <div key={report.id} className="card p-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
@@ -193,15 +201,19 @@ export default function ReportsPage() {
                     </>
                   ) : (
                     <>
-                      <button className="btn-ghost text-xs px-3 py-1.5 flex items-center gap-1"
-                        onClick={() => handleEdit(report)}>
-                        <Edit3 className="w-3 h-3" /> Edit
-                      </button>
-                      <button className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
-                        onClick={() => finalize.mutate(report.id)}
-                        disabled={finalize.isPending}>
-                        <CheckCircle2 className="w-3 h-3" /> Finalize
-                      </button>
+                      {perms.canManageReports && (
+                        <button className="btn-ghost text-xs px-3 py-1.5 flex items-center gap-1"
+                          onClick={() => handleEdit(report)}>
+                          <Edit3 className="w-3 h-3" /> Edit
+                        </button>
+                      )}
+                      {perms.canManageReports && (
+                        <button className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
+                          onClick={() => finalize.mutate(report.id)}
+                          disabled={finalize.isPending}>
+                          <CheckCircle2 className="w-3 h-3" /> Finalize
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
@@ -215,7 +227,8 @@ export default function ReportsPage() {
           <h3 className="text-primary font-display text-lg mb-2">No Reports Yet</h3>
           <p className="text-secondary text-sm">Generate your first report after completing AI analysis.</p>
         </div>
-      )}
+      );
+      })()}
 
       {/* View Modal */}
       {viewReport && (

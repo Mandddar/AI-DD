@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { agentsApi, type RunSummary } from "../../api/agents";
 import { cn } from "../../lib/utils";
+import { usePermissions } from "../../hooks/usePermissions";
 
 const WORKSTREAM_OPTIONS = [
   { value: "planning", label: "Planning" },
@@ -44,6 +45,7 @@ export function AgentsPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const perms = usePermissions();
   const [selected, setSelected] = useState<string[]>(["planning", "legal", "tax", "finance"]);
 
   const { data: runs = [], isLoading } = useQuery({
@@ -75,34 +77,36 @@ export function AgentsPage() {
         </div>
 
         {/* Trigger panel */}
-        <div className="card p-4 w-72 space-y-3 shrink-0">
-          <p className="text-xs font-medium text-text-secondary uppercase tracking-wider">New Run</p>
-          <div className="flex flex-wrap gap-1.5">
-            {WORKSTREAM_OPTIONS.map((ws) => (
-              <button
-                key={ws.value}
-                onClick={() => toggle(ws.value)}
-                className={cn(
-                  "rounded px-2.5 py-1 text-xs font-medium transition-colors",
-                  selected.includes(ws.value)
-                    ? "bg-gold text-canvas"
-                    : "bg-surface text-text-secondary hover:bg-canvas-border"
-                )}
-              >
-                {ws.label}
-              </button>
-            ))}
+        {perms.canRunAnalysis && (
+          <div className="card p-4 w-72 space-y-3 shrink-0">
+            <p className="text-xs font-medium text-text-secondary uppercase tracking-wider">New Run</p>
+            <div className="flex flex-wrap gap-1.5">
+              {WORKSTREAM_OPTIONS.map((ws) => (
+                <button
+                  key={ws.value}
+                  onClick={() => toggle(ws.value)}
+                  className={cn(
+                    "rounded px-2.5 py-1 text-xs font-medium transition-colors",
+                    selected.includes(ws.value)
+                      ? "bg-gold text-canvas"
+                      : "bg-surface text-text-secondary hover:bg-canvas-border"
+                  )}
+                >
+                  {ws.label}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => triggerMutation.mutate()}
+              disabled={triggerMutation.isPending || selected.length === 0}
+              className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
+            >
+              {triggerMutation.isPending
+                ? <><Loader2 size={14} className="animate-spin" /> Starting…</>
+                : <><Play size={14} /> Run Analysis</>}
+            </button>
           </div>
-          <button
-            onClick={() => triggerMutation.mutate()}
-            disabled={triggerMutation.isPending || selected.length === 0}
-            className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
-          >
-            {triggerMutation.isPending
-              ? <><Loader2 size={14} className="animate-spin" /> Starting…</>
-              : <><Play size={14} /> Run Analysis</>}
-          </button>
-        </div>
+        )}
       </div>
 
       {/* Runs list */}

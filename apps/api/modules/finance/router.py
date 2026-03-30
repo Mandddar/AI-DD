@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
-from modules.auth.dependencies import current_user as get_current_user
+from modules.auth.dependencies import project_manager, project_contributor, project_reader
 from modules.auth.models import User
 from .models import FinancialDataset, FinancialLineItem, VarianceAnalysis
 from .schemas import FinancialDatasetOut, LineItemOut, VarianceAnalysisOut
@@ -49,7 +49,7 @@ async def upload_financial_data(
     project_id: UUID,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_contributor),
 ):
     """Import financial data from Excel (.xlsx) or CSV/TSV file."""
     if not file.filename:
@@ -82,7 +82,7 @@ async def upload_financial_data(
 async def list_datasets(
     project_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_reader),
 ):
     """List all financial datasets for a project."""
     result = await db.execute(
@@ -98,7 +98,7 @@ async def get_line_items(
     project_id: UUID,
     dataset_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_reader),
 ):
     """Get all line items for a financial dataset."""
     result = await db.execute(
@@ -113,7 +113,7 @@ async def get_line_items(
 async def get_variance_analyses(
     project_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_reader),
 ):
     """Get all variance analyses for a project."""
     result = await db.execute(
@@ -209,7 +209,7 @@ async def run_variance_analysis(
     project_id: UUID,
     analysis_type: str = "internal_historical",
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_manager),
 ):
     """Trigger variance analysis (internal historical or external benchmark)."""
     result = await db.execute(

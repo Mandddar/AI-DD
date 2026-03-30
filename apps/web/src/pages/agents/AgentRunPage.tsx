@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { agentsApi, type Finding, type AgentType, type Severity } from "../../api/agents";
 import { cn } from "../../lib/utils";
+import { usePermissions } from "../../hooks/usePermissions";
 
 const AGENT_LABELS: Record<AgentType, string> = {
   planning: "Planning",
@@ -32,7 +33,7 @@ function SeverityBadge({ severity }: { severity: Severity }) {
   );
 }
 
-function FindingCard({ finding, projectId, runId }: { finding: Finding; projectId: string; runId: string }) {
+function FindingCard({ finding, projectId, runId, canReview }: { finding: Finding; projectId: string; runId: string; canReview: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const qc = useQueryClient();
 
@@ -93,7 +94,7 @@ function FindingCard({ finding, projectId, runId }: { finding: Finding; projectI
             </div>
           )}
 
-          {isPending && (
+          {isPending && canReview && (
             <div className="flex gap-2 pt-1">
               <button
                 onClick={() => reviewMutation.mutate("approved")}
@@ -120,6 +121,7 @@ function FindingCard({ finding, projectId, runId }: { finding: Finding; projectI
 export function AgentRunPage() {
   const { projectId, runId } = useParams<{ projectId: string; runId: string }>();
   const navigate = useNavigate();
+  const perms = usePermissions();
   const [activeTab, setActiveTab] = useState<AgentType | "all">("all");
 
   const { data: run, isLoading } = useQuery({
@@ -264,6 +266,7 @@ export function AgentRunPage() {
               finding={finding}
               projectId={projectId!}
               runId={runId!}
+              canReview={perms.canReviewFindings}
             />
           ))}
         </div>

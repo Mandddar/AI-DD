@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { projectsApi } from "../api/projects";
 import { useAuthStore } from "../store/auth";
+import { usePermissions } from "../hooks/usePermissions";
 import { Link } from "react-router-dom";
 
 const DEAL_TYPE_LABELS: Record<string, string> = {
@@ -28,6 +29,7 @@ function greeting() {
 
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
+  const perms = usePermissions();
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ["projects"],
     queryFn: projectsApi.list,
@@ -95,9 +97,11 @@ export function DashboardPage() {
             })}
           </p>
         </div>
-        <Link to="/projects" className="btn-primary text-sm gap-1.5">
-          New deal <ArrowRight size={13} />
-        </Link>
+        {perms.canCreateProject && (
+          <Link to="/projects" className="btn-primary text-sm gap-1.5">
+            New deal <ArrowRight size={13} />
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

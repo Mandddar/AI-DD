@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from core.database import get_db
-from modules.auth.dependencies import current_user
+from modules.auth.dependencies import current_user, project_manager, project_contributor, project_reader
 from modules.auth.models import User
 from .models import Document, DocumentText, Workstream, DocumentStatus
 from .schemas import DocumentResponse, DocumentTextResponse
@@ -65,7 +65,7 @@ async def upload_document(
     file: UploadFile = File(...),
     workstream: Workstream = Form(Workstream.general),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(project_contributor),
 ):
     file_bytes = await file.read()
 
@@ -102,7 +102,7 @@ async def upload_document(
 async def list_documents(
     project_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(project_reader),
 ):
     result = await db.execute(
         select(Document)
@@ -117,7 +117,7 @@ async def get_document_text(
     project_id: UUID,
     document_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(project_reader),
 ):
     result = await db.execute(
         select(DocumentText).where(DocumentText.document_id == document_id)
@@ -133,7 +133,7 @@ async def delete_document(
     project_id: UUID,
     document_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(project_manager),
 ):
     from sqlalchemy import delete as sql_delete
     from modules.agent.models import DocumentChunk
@@ -156,7 +156,7 @@ async def download_document(
     project_id: UUID,
     document_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(project_reader),
 ):
     doc = await db.get(Document, document_id)
     if not doc:

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from core.database import get_db
-from modules.auth.dependencies import current_user, require_advisor
+from modules.auth.dependencies import current_user, project_manager, project_reader
 from modules.auth.models import User
 from .models import AgentRun, AgentFinding, FindingStatus
 from .schemas import RunCreate, RunResponse, RunSummaryResponse, FindingReview, FindingResponse
@@ -19,7 +19,7 @@ async def trigger_run(
     data: RunCreate,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_advisor),
+    user: User = Depends(project_manager),
 ):
     valid = {"planning", "legal", "tax", "finance"}
     workstreams = [w for w in data.workstreams if w in valid]
@@ -47,7 +47,7 @@ async def trigger_run(
 async def list_runs(
     project_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(project_reader),
 ):
     runs_result = await db.execute(
         select(AgentRun)
@@ -74,7 +74,7 @@ async def get_run(
     project_id: UUID,
     run_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(project_reader),
 ):
     run = await db.get(AgentRun, run_id)
     if not run or run.project_id != project_id:
@@ -100,7 +100,7 @@ async def review_finding(
     finding_id: UUID,
     data: FindingReview,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_advisor),
+    user: User = Depends(project_manager),
 ):
     finding = await db.get(AgentFinding, finding_id)
     if not finding or finding.run_id != run_id:

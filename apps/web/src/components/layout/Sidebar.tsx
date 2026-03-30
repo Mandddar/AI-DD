@@ -4,34 +4,44 @@ import {
   ClipboardList, TrendingUp, Shield, Settings, LogOut
 } from "lucide-react";
 import { useAuthStore } from "../../store/auth";
+import { usePermissions } from "../../hooks/usePermissions";
 import { cn } from "../../lib/utils";
 
 function SidebarContent() {
   const { projectId } = useParams<{ projectId?: string }>();
   const { user, logout } = useAuthStore();
+  const perms = usePermissions();
 
-  const projectLinks = projectId
+  // Build project links filtered by role permissions
+  const allProjectLinks = projectId
     ? [
-        { to: `/projects/${projectId}/documents`, icon: FileText, label: "Documents" },
-        { to: `/projects/${projectId}/planning`, icon: ClipboardList, label: "Planning" },
-        { to: `/projects/${projectId}/analysis`, icon: Brain, label: "AI Analysis" },
-        { to: `/projects/${projectId}/finance`, icon: TrendingUp, label: "Finance" },
-        { to: `/projects/${projectId}/reports`, icon: BarChart3, label: "Reports" },
+        { to: `/projects/${projectId}/documents`, icon: FileText, label: "Documents", show: true },
+        { to: `/projects/${projectId}/planning`, icon: ClipboardList, label: "Planning", show: perms.canViewPlanning },
+        { to: `/projects/${projectId}/analysis`, icon: Brain, label: "AI Analysis", show: perms.isAdvisor },
+        { to: `/projects/${projectId}/finance`, icon: TrendingUp, label: "Finance", show: !perms.isReadOnly },
+        { to: `/projects/${projectId}/reports`, icon: BarChart3, label: "Reports", show: perms.canViewReports },
       ]
     : [
-        { to: "#", icon: FileText, label: "Documents", disabled: true },
-        { to: "#", icon: ClipboardList, label: "Planning", disabled: true },
-        { to: "#", icon: Brain, label: "AI Analysis", disabled: true },
-        { to: "#", icon: TrendingUp, label: "Finance", disabled: true },
-        { to: "#", icon: BarChart3, label: "Reports", disabled: true },
+        { to: "#", icon: FileText, label: "Documents", disabled: true, show: true },
+        { to: "#", icon: ClipboardList, label: "Planning", disabled: true, show: perms.canViewPlanning },
+        { to: "#", icon: Brain, label: "AI Analysis", disabled: true, show: perms.isAdvisor },
+        { to: "#", icon: TrendingUp, label: "Finance", disabled: true, show: !perms.isReadOnly },
+        { to: "#", icon: BarChart3, label: "Reports", disabled: true, show: perms.canViewReports },
       ];
 
+  const projectLinks = allProjectLinks.filter(l => l.show);
+
   const NAV = [
-    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", end: true },
-    { to: "/projects", icon: FolderOpen, label: "Deals", end: true },
+    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", end: true, show: true },
+    { to: "/projects", icon: FolderOpen, label: "Deals", end: true, show: true },
     ...projectLinks.map(l => ({ ...l, end: false })),
-    { to: "/audit", icon: Shield, label: "Audit Trail", end: true },
-  ];
+    { to: "/audit", icon: Shield, label: "Audit Trail", end: true, show: perms.canViewAudit },
+  ].filter(item => item.show);
+
+  // Split into sections: first 2 are "General", last is "System" (if audit visible), rest is "Project"
+  const generalItems = NAV.slice(0, 2);
+  const auditItem = perms.canViewAudit ? NAV.filter(i => i.to === "/audit") : [];
+  const projectItems = NAV.filter(i => !generalItems.includes(i) && !auditItem.includes(i));
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-canvas-border bg-canvas-subtle">
@@ -51,21 +61,21 @@ function SidebarContent() {
         {projectId && (
           <p className="px-3 pt-2 pb-1 text-[10px] text-text-muted uppercase tracking-widest">General</p>
         )}
-        {NAV.slice(0, 2).map((item) => (
+        {generalItems.map((item) => (
           <NavItem key={item.label} item={item} />
         ))}
 
-        {projectId && (
+        {projectId && projectItems.length > 0 && (
           <p className="px-3 pt-4 pb-1 text-[10px] text-text-muted uppercase tracking-widest">Project</p>
         )}
-        {NAV.slice(2, -1).map((item) => (
+        {projectItems.map((item) => (
           <NavItem key={item.label} item={item} />
         ))}
 
-        {projectId && (
+        {projectId && auditItem.length > 0 && (
           <p className="px-3 pt-4 pb-1 text-[10px] text-text-muted uppercase tracking-widest">System</p>
         )}
-        {NAV.slice(-1).map((item) => (
+        {auditItem.map((item) => (
           <NavItem key={item.label} item={item} />
         ))}
       </nav>

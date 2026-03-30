@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
-from modules.auth.dependencies import current_user as get_current_user
+from modules.auth.dependencies import project_manager, project_contributor, project_reader
 from modules.auth.models import User
 from .models import AuditPlan, RequestListItem, PlanningPhase
 from .schemas import BasicDataInput, DialogAnswer, RequestItemUpdate, AuditPlanOut, RequestItemOut
@@ -22,7 +22,7 @@ async def submit_basic_data(
     project_id: UUID,
     data: BasicDataInput,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_manager),
 ):
     """Phase 1: Submit basic company data — auto-advances to Phase 2 with AI risk analysis."""
     result = await db.execute(
@@ -54,7 +54,7 @@ async def submit_basic_data(
 async def get_audit_plan(
     project_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_reader),
 ):
     """Get the current audit plan for a project. Returns null if none exists."""
     result = await db.execute(
@@ -67,7 +67,7 @@ async def get_audit_plan(
 async def advance_phase(
     project_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_manager),
 ):
     """Advance the audit plan to the next phase (triggers AI processing for the new phase)."""
     result = await db.execute(
@@ -115,7 +115,7 @@ async def advance_phase(
 async def approve_plan(
     project_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_manager),
 ):
     """Phase 4: Human approves the audit plan — generates request list and advances to Phase 5."""
     result = await db.execute(
@@ -153,7 +153,7 @@ async def approve_plan(
 async def get_request_list(
     project_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_reader),
 ):
     """Get all request list items for this project's audit plan."""
     plan_result = await db.execute(
@@ -177,7 +177,7 @@ async def update_request_item(
     item_id: UUID,
     update: RequestItemUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_contributor),
 ):
     """Update status/priority of a request list item."""
     item = await db.get(RequestListItem, item_id)

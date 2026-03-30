@@ -10,8 +10,8 @@ from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
-from modules.auth.dependencies import current_user as get_current_user
-from modules.auth.models import User
+from modules.auth.dependencies import project_manager, project_contributor, project_reader
+from modules.auth.models import User, UserRole
 from .models import Report, ReportType
 from .schemas import ReportCreate, ReportContentUpdate, ReportOut
 
@@ -23,7 +23,7 @@ async def generate_report(
     project_id: UUID,
     data: ReportCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_manager),
 ):
     """Generate a new report populated with AI findings from completed analyses."""
     content = await _build_report_content(project_id, data.report_type, data.workstream, db)
@@ -162,7 +162,7 @@ async def _build_report_content(
 async def list_reports(
     project_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_reader),
 ):
     """List all reports for a project."""
     result = await db.execute(
@@ -178,12 +178,14 @@ async def get_report(
     project_id: UUID,
     report_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_reader),
 ):
     """Get a specific report with its content."""
     report = await db.get(Report, report_id)
     if not report or report.project_id != project_id:
         raise HTTPException(status_code=404, detail="Report not found")
+    if user.role == UserRole.buyer and not report.is_finalized:
+        raise HTTPException(status_code=403, detail="Buyers can only access finalized reports")
     return report
 
 
@@ -193,7 +195,7 @@ async def edit_report_content(
     report_id: UUID,
     update: ReportContentUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_manager),
 ):
     """Edit report content (executive summary editing before export)."""
     report = await db.get(Report, report_id)
@@ -213,7 +215,7 @@ async def finalize_report(
     project_id: UUID,
     report_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_manager),
 ):
     """Finalize report — generates the .docx file for download."""
     report = await db.get(Report, report_id)
@@ -237,12 +239,14 @@ async def download_report(
     project_id: UUID,
     report_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(project_reader),
 ):
     """Download finalized report as .docx."""
     report = await db.get(Report, report_id)
     if not report or report.project_id != project_id:
         raise HTTPException(status_code=404, detail="Report not found")
+    if user.role == UserRole.buyer and not report.is_finalized:
+        raise HTTPException(status_code=403, detail="Buyers can only access finalized reports")
     if not report.storage_path:
         raise HTTPException(status_code=400, detail="Report file not yet generated. Finalize the report first.")
 

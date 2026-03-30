@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { finance } from '../../api/finance';
+import { usePermissions } from '../../hooks/usePermissions';
 import {
   TrendingUp, Upload, BarChart3, Loader2, FileSpreadsheet, AlertTriangle
 } from 'lucide-react';
@@ -9,6 +10,7 @@ import {
 export default function FinancePage() {
   const { projectId } = useParams<{ projectId: string }>();
   const queryClient = useQueryClient();
+  const perms = usePermissions();
   const [uploading, setUploading] = useState(false);
 
   const { data: datasets, isLoading } = useQuery({
@@ -53,11 +55,13 @@ export default function FinancePage() {
           <TrendingUp className="w-7 h-7 text-gold" />
           <h1 className="text-2xl font-display font-bold text-primary">Financial Analysis</h1>
         </div>
-        <label className="btn-primary px-4 py-2 cursor-pointer flex items-center gap-2">
-          <Upload className="w-4 h-4" />
-          {uploading ? 'Uploading...' : 'Upload Financial Data'}
-          <input type="file" className="hidden" accept=".xlsx,.xls,.csv,.tsv" onChange={handleUpload} />
-        </label>
+        {perms.canUploadFinanceData && (
+          <label className="btn-primary px-4 py-2 cursor-pointer flex items-center gap-2">
+            <Upload className="w-4 h-4" />
+            {uploading ? 'Uploading...' : 'Upload Financial Data'}
+            <input type="file" className="hidden" accept=".xlsx,.xls,.csv,.tsv" onChange={handleUpload} />
+          </label>
+        )}
       </div>
 
       {/* Datasets */}
@@ -96,14 +100,16 @@ export default function FinancePage() {
           <h2 className="text-lg font-display font-semibold text-primary flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-gold" /> Variance Analysis
           </h2>
-          <div className="flex gap-2">
-            <button className="btn-ghost text-sm px-3 py-1.5" onClick={() => runAnalysis.mutate('internal_historical')}
-              disabled={runAnalysis.isPending || !datasets?.length}
-              title={!datasets?.length ? 'Upload financial data first' : ''}>Internal Historical</button>
-            <button className="btn-ghost text-sm px-3 py-1.5" onClick={() => runAnalysis.mutate('external_benchmark')}
-              disabled={runAnalysis.isPending || !datasets?.length}
-              title={!datasets?.length ? 'Upload financial data first' : ''}>External Benchmark</button>
-          </div>
+          {perms.canRunFinanceAnalysis && (
+            <div className="flex gap-2">
+              <button className="btn-ghost text-sm px-3 py-1.5" onClick={() => runAnalysis.mutate('internal_historical')}
+                disabled={runAnalysis.isPending || !datasets?.length}
+                title={!datasets?.length ? 'Upload financial data first' : ''}>Internal Historical</button>
+              <button className="btn-ghost text-sm px-3 py-1.5" onClick={() => runAnalysis.mutate('external_benchmark')}
+                disabled={runAnalysis.isPending || !datasets?.length}
+                title={!datasets?.length ? 'Upload financial data first' : ''}>External Benchmark</button>
+            </div>
+          )}
         </div>
         {variances?.length ? (
           <div className="space-y-3">

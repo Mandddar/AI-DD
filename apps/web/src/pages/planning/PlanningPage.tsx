@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { planning, type BasicDataInput, type RequestItem } from '../../api/planning';
+import { usePermissions } from '../../hooks/usePermissions';
 import {
   ClipboardList, Building2, AlertTriangle, MessageSquare,
   CheckCircle2, FileSpreadsheet, ChevronRight, Loader2
@@ -18,6 +19,7 @@ const PHASES = [
 export default function PlanningPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const queryClient = useQueryClient();
+  const perms = usePermissions();
 
   const { data: plan, isLoading } = useQuery({
     queryKey: ['planning', projectId],
@@ -107,8 +109,8 @@ export default function PlanningPage() {
         </div>
       </div>
 
-      {/* No Plan Yet — Show Phase 1 Form */}
-      {!plan && (
+      {/* No Plan Yet — Show Phase 1 Form (advisors only) or read-only message */}
+      {!plan && perms.canManagePlanning && (
         <div className="card p-6 space-y-6">
           <h2 className="text-lg font-display font-semibold text-primary">Phase 1 — Basic Company Data</h2>
           <p className="text-secondary text-sm">Enter the target company's basic information to begin the audit planning process.</p>
@@ -163,16 +165,25 @@ export default function PlanningPage() {
           </button>
         </div>
       )}
+      {!plan && !perms.canManagePlanning && (
+        <div className="card p-6 text-center">
+          <ClipboardList className="w-12 h-12 text-secondary/30 mx-auto mb-3" />
+          <p className="text-secondary">No audit plan has been created yet.</p>
+          <p className="text-secondary/60 text-sm mt-1">An advisor will set up the planning process.</p>
+        </div>
+      )}
 
       {/* Phase 1 complete but stuck (legacy plans) — show advance button */}
       {plan?.current_phase === 'basic_data' && (
         <div className="card p-6 space-y-4">
           <h2 className="text-lg font-display font-semibold text-primary">Phase 1 — Basic Data Submitted</h2>
           <p className="text-secondary text-sm">Company data has been recorded. Advance to AI Risk Analysis.</p>
-          <button className="btn-primary px-6 py-2" onClick={() => advancePhase.mutate()}
-            disabled={advancePhase.isPending}>
-            {advancePhase.isPending ? 'Generating Risk Analysis...' : 'Proceed to Risk Analysis'}
-          </button>
+          {perms.canManagePlanning && (
+            <button className="btn-primary px-6 py-2" onClick={() => advancePhase.mutate()}
+              disabled={advancePhase.isPending}>
+              {advancePhase.isPending ? 'Generating Risk Analysis...' : 'Proceed to Risk Analysis'}
+            </button>
+          )}
         </div>
       )}
 
@@ -200,10 +211,12 @@ export default function PlanningPage() {
           ) : (
             <p className="text-secondary italic">Risk analysis is being generated...</p>
           )}
-          <button className="btn-primary px-6 py-2" onClick={() => advancePhase.mutate()}
-            disabled={advancePhase.isPending}>
-            {advancePhase.isPending ? 'Processing...' : 'Proceed to Interactive Dialog'}
-          </button>
+          {perms.canManagePlanning && (
+            <button className="btn-primary px-6 py-2" onClick={() => advancePhase.mutate()}
+              disabled={advancePhase.isPending}>
+              {advancePhase.isPending ? 'Processing...' : 'Proceed to Interactive Dialog'}
+            </button>
+          )}
         </div>
       )}
 
@@ -224,10 +237,12 @@ export default function PlanningPage() {
           ) : (
             <p className="text-secondary italic">No dialog questions generated yet.</p>
           )}
-          <button className="btn-primary px-6 py-2" onClick={() => advancePhase.mutate()}
-            disabled={advancePhase.isPending}>
-            {advancePhase.isPending ? 'Processing...' : 'Proceed to Plan Approval'}
-          </button>
+          {perms.canManagePlanning && (
+            <button className="btn-primary px-6 py-2" onClick={() => advancePhase.mutate()}
+              disabled={advancePhase.isPending}>
+              {advancePhase.isPending ? 'Processing...' : 'Proceed to Plan Approval'}
+            </button>
+          )}
         </div>
       )}
 
@@ -243,12 +258,14 @@ export default function PlanningPage() {
           ) : (
             <p className="text-secondary italic">Audit plan content is being generated...</p>
           )}
-          <div className="flex gap-3">
-            <button className="btn-primary px-6 py-2" onClick={() => approvePlan.mutate()}
-              disabled={approvePlan.isPending}>
-              {approvePlan.isPending ? 'Approving...' : 'Approve Audit Plan'}
-            </button>
-          </div>
+          {perms.canManagePlanning && (
+            <div className="flex gap-3">
+              <button className="btn-primary px-6 py-2" onClick={() => approvePlan.mutate()}
+                disabled={approvePlan.isPending}>
+                {approvePlan.isPending ? 'Approving...' : 'Approve Audit Plan'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -279,6 +296,7 @@ export default function PlanningPage() {
                       <td className="p-3 text-primary max-w-xs truncate">{item.question}</td>
                       <td className="p-3">
                         <select className="input text-xs py-1 px-2" value={item.status}
+                          disabled={!perms.canUpdateRequestList}
                           onChange={e => updateItem.mutate({ itemId: item.id, data: { status: e.target.value as any } })}>
                           <option value="open">Open</option>
                           <option value="partial">Partial</option>
@@ -288,6 +306,7 @@ export default function PlanningPage() {
                       </td>
                       <td className="p-3">
                         <select className="input text-xs py-1 px-2" value={item.priority}
+                          disabled={!perms.canUpdateRequestList}
                           onChange={e => updateItem.mutate({ itemId: item.id, data: { priority: e.target.value as any } })}>
                           <option value="high">High</option>
                           <option value="medium">Medium</option>
