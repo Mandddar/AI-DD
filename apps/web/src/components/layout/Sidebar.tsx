@@ -1,7 +1,7 @@
 import { NavLink, useParams } from "react-router-dom";
 import {
   LayoutDashboard, FolderOpen, FileText, Brain, BarChart3,
-  ClipboardList, TrendingUp, Shield, Settings, LogOut, Lock
+  ClipboardList, TrendingUp, Shield, Settings, LogOut, Lock, AlertTriangle
 } from "lucide-react";
 import { useAuthStore } from "../../store/auth";
 import { usePermissions } from "../../hooks/usePermissions";
@@ -18,6 +18,7 @@ function SidebarContent() {
         { to: `/projects/${projectId}/documents`, icon: FileText, label: "Documents", show: true },
         { to: `/projects/${projectId}/planning`, icon: ClipboardList, label: "Planning", show: perms.canViewPlanning },
         { to: `/projects/${projectId}/analysis`, icon: Brain, label: "AI Analysis", show: perms.isAdvisor },
+        { to: `/projects/${projectId}/red-flags`, icon: AlertTriangle, label: "Red Flags", show: perms.isAdvisor },
         { to: `/projects/${projectId}/finance`, icon: TrendingUp, label: "Finance", show: !perms.isReadOnly },
         { to: `/projects/${projectId}/reports`, icon: BarChart3, label: "Reports", show: perms.canViewReports },
       ]
@@ -25,6 +26,7 @@ function SidebarContent() {
         { to: "#", icon: FileText, label: "Documents", disabled: true, show: true },
         { to: "#", icon: ClipboardList, label: "Planning", disabled: true, show: perms.canViewPlanning },
         { to: "#", icon: Brain, label: "AI Analysis", disabled: true, show: perms.isAdvisor },
+        { to: "#", icon: AlertTriangle, label: "Red Flags", disabled: true, show: perms.isAdvisor },
         { to: "#", icon: TrendingUp, label: "Finance", disabled: true, show: !perms.isReadOnly },
         { to: "#", icon: BarChart3, label: "Reports", disabled: true, show: perms.canViewReports },
       ];

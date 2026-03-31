@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Brain, Play, Loader2, CheckCircle, AlertCircle, Clock,
-  ChevronRight, FileSearch,
+  ChevronRight, FileSearch, AlertTriangle,
 } from "lucide-react";
 import { agentsApi, type RunSummary } from "../../api/agents";
 import { cn } from "../../lib/utils";
@@ -109,6 +109,17 @@ export function AgentsPage() {
         )}
       </div>
 
+      {/* Cumulative behavior notice */}
+      {runs.filter(r => r.status === "completed").length > 1 && (
+        <div className="card p-3 flex items-center gap-2 text-xs text-text-secondary border-gold/20 bg-gold/5">
+          <AlertTriangle size={14} className="text-gold shrink-0" />
+          <span>
+            Findings accumulate across runs. Each new run adds to existing findings rather than replacing them.
+            Total findings shown per run reflect all findings generated up to that point.
+          </span>
+        </div>
+      )}
+
       {/* Runs list */}
       {isLoading ? (
         <div className="card p-8 text-center">
@@ -150,6 +161,12 @@ export function AgentsPage() {
                     ? ` · ${run.finding_count} finding${run.finding_count !== 1 ? "s" : ""}`
                     : ""}
                 </p>
+                {run.status === "completed" && run.total_documents === 0 && (
+                  <p className="mt-1 flex items-center gap-1 text-xs text-yellow-500">
+                    <AlertTriangle size={11} />
+                    No documents were uploaded — findings are based on planning data only
+                  </p>
+                )}
               </div>
 
               <ChevronRight size={15} className="text-text-muted group-hover:text-text-secondary transition-colors shrink-0" />

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { reports, type ReportCreate, type Report } from '../../api/reports';
@@ -21,11 +21,19 @@ export default function ReportsPage() {
   const [viewReport, setViewReport] = useState<Report | null>(null);
   const [editReport, setEditReport] = useState<Report | null>(null);
   const [editText, setEditText] = useState('');
-  const [formData, setFormData] = useState<ReportCreate>({
-    report_type: 'detailed_workstream',
-    workstream: 'legal',
-    title: '',
+  const draftKey = `report_draft_${projectId}`;
+  const [formData, setFormData] = useState<ReportCreate>(() => {
+    try {
+      const saved = sessionStorage.getItem(draftKey);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { report_type: 'detailed_workstream', workstream: 'legal', title: '' };
   });
+
+  // Persist form data to session storage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem(draftKey, JSON.stringify(formData));
+  }, [formData, draftKey]);
 
   const { data: reportList, isLoading } = useQuery({
     queryKey: ['reports', projectId],
@@ -40,7 +48,9 @@ export default function ReportsPage() {
       queryClient.invalidateQueries({ queryKey: ['reports', projectId] });
       setShowForm(false);
       setGenerateError(null);
-      setFormData({ report_type: 'detailed_workstream', workstream: 'legal', title: '' });
+      const fresh = { report_type: 'detailed_workstream', workstream: 'legal', title: '' };
+      setFormData(fresh);
+      sessionStorage.removeItem(draftKey);
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.detail || 'Failed to generate report. Ensure AI analysis has completed first.';

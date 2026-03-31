@@ -52,29 +52,37 @@ async def _build_report_content(
     workstream: str | None,
     db: AsyncSession,
 ) -> dict:
-    """Pull AI findings from agent_findings and structure them into report content."""
+    """Pull AI findings from agent_findings across ALL completed runs for this project."""
     from modules.agent.models import AgentFinding, AgentRun, RunStatus
 
-    # Get the latest completed run for this project
-    run_result = await db.execute(
-        select(AgentRun)
+    # Get ALL completed runs for this project (not just the latest)
+    runs_result = await db.execute(
+        select(AgentRun.id)
         .where(AgentRun.project_id == project_id)
         .where(AgentRun.status == RunStatus.completed)
         .order_by(AgentRun.completed_at.desc())
-        .limit(1)
     )
-    latest_run = run_result.scalar_one_or_none()
-    if not latest_run:
+    completed_run_ids = [row[0] for row in runs_result.all()]
+
+    if not completed_run_ids:
         return {"Notice": "No completed AI analysis found. Run AI analysis on this project first, then try generating the report."}
 
-    # Get findings — filter by workstream if detailed report
-    findings_query = select(AgentFinding).where(AgentFinding.run_id == latest_run.id)
+    # Get findings from ALL completed runs — filter by workstream if detailed report
+    findings_query = select(AgentFinding).where(AgentFinding.run_id.in_(completed_run_ids))
     if report_type == "detailed_workstream" and workstream:
         findings_query = findings_query.where(AgentFinding.agent_type == workstream)
     findings_query = findings_query.order_by(AgentFinding.severity.desc())
 
     findings_result = await db.execute(findings_query)
-    findings = list(findings_result.scalars().all())
+    all_findings = list(findings_result.scalars().all())
+
+    # Deduplicate by title (keep earliest occurrence = from latest run since ordered desc)
+    seen_titles: set[str] = set()
+    findings = []
+    for f in all_findings:
+        if f.title not in seen_titles:
+            seen_titles.add(f.title)
+            findings.append(f)
 
     if not findings:
         ws_name = (workstream or "").capitalize()

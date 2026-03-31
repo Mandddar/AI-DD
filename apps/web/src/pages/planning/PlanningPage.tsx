@@ -5,7 +5,7 @@ import { planning, type BasicDataInput, type RequestItem } from '../../api/plann
 import { usePermissions } from '../../hooks/usePermissions';
 import {
   ClipboardList, Building2, AlertTriangle, MessageSquare,
-  CheckCircle2, FileSpreadsheet, ChevronRight, Loader2
+  CheckCircle2, FileSpreadsheet, ChevronRight, Loader2, Send, X
 } from 'lucide-react';
 
 const PHASES = [
@@ -66,6 +66,9 @@ export default function PlanningPage() {
       planning.updateRequestItem(projectId!, itemId, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['requestList', projectId] }),
   });
+
+  const [queryDialog, setQueryDialog] = useState<{ itemId: string; question: string } | null>(null);
+  const [queryText, setQueryText] = useState('');
 
   if (isLoading) {
     return (
@@ -297,7 +300,15 @@ export default function PlanningPage() {
                       <td className="p-3">
                         <select className="input text-xs py-1 px-2" value={item.status}
                           disabled={!perms.canUpdateRequestList}
-                          onChange={e => updateItem.mutate({ itemId: item.id, data: { status: e.target.value as any } })}>
+                          onChange={e => {
+                            const val = e.target.value;
+                            if (val === 'query') {
+                              setQueryDialog({ itemId: item.id, question: item.question });
+                              setQueryText('');
+                            } else {
+                              updateItem.mutate({ itemId: item.id, data: { status: val as any } });
+                            }
+                          }}>
                           <option value="open">Open</option>
                           <option value="partial">Partial</option>
                           <option value="query">Query</option>
@@ -321,6 +332,52 @@ export default function PlanningPage() {
           ) : (
             <p className="text-secondary italic">No request items generated yet.</p>
           )}
+        </div>
+      )}
+
+      {/* Query Composition Dialog */}
+      {queryDialog && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setQueryDialog(null)}>
+          <div className="bg-canvas-card border border-canvas-border rounded-xl max-w-lg w-full overflow-hidden"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-canvas-border">
+              <div>
+                <h2 className="text-lg font-display font-semibold text-primary">Compose Query</h2>
+                <p className="text-secondary text-xs mt-1">Send a query to the seller regarding this request item.</p>
+              </div>
+              <button onClick={() => setQueryDialog(null)} className="text-secondary hover:text-primary"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="label">Request Item</label>
+                <p className="text-primary text-sm bg-surface rounded-lg p-3 border border-canvas-border">{queryDialog.question}</p>
+              </div>
+              <div>
+                <label className="label">Query Message</label>
+                <textarea
+                  className="input w-full h-32 resize-none"
+                  placeholder="Describe what additional information or clarification you need from the seller..."
+                  value={queryText}
+                  onChange={e => setQueryText(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="p-4 border-t border-canvas-border flex justify-end gap-3">
+              <button className="btn-ghost px-4 py-2 text-sm" onClick={() => setQueryDialog(null)}>Cancel</button>
+              <button
+                className="btn-primary px-4 py-2 text-sm flex items-center gap-2"
+                disabled={!queryText.trim()}
+                onClick={() => {
+                  updateItem.mutate(
+                    { itemId: queryDialog.itemId, data: { status: 'query' as any } },
+                    { onSuccess: () => { setQueryDialog(null); setQueryText(''); } }
+                  );
+                }}
+              >
+                <Send className="w-4 h-4" /> Send Query
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

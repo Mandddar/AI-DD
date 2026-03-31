@@ -83,6 +83,55 @@ function DropZone({ onFiles }: { onFiles: (files: File[]) => void }) {
   );
 }
 
+function NdaGate({ projectId, children }: { projectId: string; children: React.ReactNode }) {
+  const ndaKey = `nda_accepted_${projectId}`;
+  const [accepted, setAccepted] = useState(() => sessionStorage.getItem(ndaKey) === "true");
+
+  if (accepted) return <>{children}</>;
+
+  return (
+    <div className="p-6 animate-fade-in">
+      <div className="card max-w-2xl mx-auto p-8 space-y-6">
+        <div className="text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gold/10 ring-1 ring-gold/30">
+            <FileText size={24} className="text-gold" />
+          </div>
+          <h2 className="font-display text-xl text-text-primary">Non-Disclosure Agreement</h2>
+          <p className="mt-2 text-sm text-text-secondary">
+            Before accessing documents for this deal, you must accept the NDA terms.
+          </p>
+        </div>
+        <div className="bg-surface rounded-lg border border-canvas-border p-4 text-sm text-text-secondary space-y-3 max-h-64 overflow-y-auto">
+          <p>
+            By accessing the data room for this deal, you acknowledge and agree that all information,
+            documents, and materials contained herein are strictly confidential and proprietary.
+          </p>
+          <p>
+            You agree not to disclose, copy, distribute, or use any information obtained through this
+            data room for any purpose other than the evaluation of the proposed transaction.
+          </p>
+          <p>
+            Unauthorized disclosure may result in legal action. This obligation survives the termination
+            of your access to the data room.
+          </p>
+          <p>
+            All AI-generated analyses of these documents are subject to the same confidentiality obligations.
+          </p>
+        </div>
+        <div className="flex justify-center gap-3">
+          <a href="/projects" className="btn-ghost px-6 py-2">Decline</a>
+          <button
+            className="btn-primary px-6 py-2"
+            onClick={() => { sessionStorage.setItem(ndaKey, "true"); setAccepted(true); }}
+          >
+            I Accept the NDA Terms
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DocumentsPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const qc = useQueryClient();
@@ -117,6 +166,7 @@ export function DocumentsPage() {
   };
 
   return (
+    <NdaGate projectId={projectId!}>
     <div className="p-6 space-y-5 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
@@ -229,5 +279,6 @@ export function DocumentsPage() {
         </div>
       )}
     </div>
+    </NdaGate>
   );
 }
