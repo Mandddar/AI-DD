@@ -72,7 +72,7 @@ export function DashboardPage() {
         color: "text-gold",
         bg: "bg-gold/10",
         ring: "ring-gold/20",
-        trend: active > 0 ? `${active} in progress` : "No active deals",
+        trend: active > 0 ? `${active} in progress` : (perms.canCreateProject ? "No active deals" : "No deals assigned yet"),
       },
       {
         label: "Documents Reviewed",
@@ -81,7 +81,7 @@ export function DashboardPage() {
         color: "text-risk-low",
         bg: "bg-risk-low/10",
         ring: "ring-risk-low/20",
-        trend: "Across all deals",
+        trend: projects.length > 0 ? "Across all deals" : (perms.canCreateProject ? "No deals yet" : "Awaiting assignment"),
       },
       {
         label: "Open Red Flags",
@@ -99,10 +99,10 @@ export function DashboardPage() {
         color: "text-risk-low",
         bg: "bg-risk-low/10",
         ring: "ring-risk-low/20",
-        trend: completed > 0 ? `${completed} closed` : "None yet",
+        trend: completed > 0 ? `${completed} closed` : (perms.canCreateProject ? "None yet" : "Awaiting assignment"),
       },
     ],
-    [active, completed, redFlagCount],
+    [active, completed, redFlagCount, perms.canCreateProject, projects.length],
   );
 
   return (
@@ -238,50 +238,57 @@ export function DashboardPage() {
         )}
       </div>
 
-      {projects.length > 0 && (
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            {
-              icon: FolderOpen,
-              label: "All Deals",
-              sub: "Manage your pipeline",
-              to: "/projects",
-              color: "text-gold",
-              bg: "bg-gold/10",
-            },
-            {
-              icon: FileSearch,
-              label: "Upload Documents",
-              sub: "Add files to a deal",
-              to: `/projects/${projects[0]?.id}/documents`,
-              color: "text-risk-low",
-              bg: "bg-risk-low/10",
-            },
-            {
-              icon: Clock,
-              label: "Run Analysis",
-              sub: "Start AI agent review",
-              to: `/projects/${projects[0]?.id}/analysis`,
-              color: "text-text-secondary",
-              bg: "bg-surface",
-            },
-          ].map(({ icon: Icon, label, sub, to, color, bg }) => (
-            <Link
-              key={label}
-              to={to}
-              className="card p-4 flex items-center gap-3 hover:border-canvas-border/80 transition-all group"
-            >
-              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${bg}`}>
-                <Icon size={16} className={color} />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-text-primary group-hover:text-gold transition-colors">{label}</p>
-                <p className="text-xs text-text-muted">{sub}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      {projects.length > 0 && (() => {
+        const quickActions = [
+          {
+            icon: FolderOpen,
+            label: "All Deals",
+            sub: "View your deals",
+            to: "/projects",
+            color: "text-gold",
+            bg: "bg-gold/10",
+            show: true,
+          },
+          {
+            icon: FileSearch,
+            label: "Upload Documents",
+            sub: "Add files to a deal",
+            to: `/projects/${projects[0]?.id}/documents`,
+            color: "text-risk-low",
+            bg: "bg-risk-low/10",
+            show: perms.canUploadDocuments,
+          },
+          {
+            icon: Clock,
+            label: "Run Analysis",
+            sub: "Start AI agent review",
+            to: `/projects/${projects[0]?.id}/analysis`,
+            color: "text-text-secondary",
+            bg: "bg-surface",
+            show: perms.canRunAnalysis,
+          },
+        ].filter(a => a.show);
+
+        return (
+          <div className={`grid gap-4 ${quickActions.length === 3 ? 'grid-cols-3' : quickActions.length === 2 ? 'grid-cols-2' : 'grid-cols-1 max-w-sm'}`}>
+            {quickActions.map(({ icon: Icon, label, sub, to, color, bg }) => (
+              <Link
+                key={label}
+                to={to}
+                className="card p-4 flex items-center gap-3 hover:border-canvas-border/80 transition-all group"
+              >
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${bg}`}>
+                  <Icon size={16} className={color} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-text-primary group-hover:text-gold transition-colors">{label}</p>
+                  <p className="text-xs text-text-muted">{sub}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 }
