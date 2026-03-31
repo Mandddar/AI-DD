@@ -88,8 +88,20 @@ export default function FinancePage() {
         ) : (
           <div className="text-center py-8">
             <FileSpreadsheet className="w-12 h-12 text-secondary/30 mx-auto mb-3" />
-            <p className="text-secondary">No financial data uploaded yet.</p>
-            <p className="text-secondary/60 text-sm mt-1">Upload Excel (.xlsx) or TSV files to begin analysis.</p>
+            <p className="text-secondary font-medium">No financial data uploaded yet</p>
+            <p className="text-secondary/60 text-sm mt-2 max-w-md mx-auto">
+              Upload Excel (.xlsx), CSV, or TSV files containing financial statements such as
+              income statements, balance sheets, or cash flow data.
+            </p>
+            <div className="mt-4 bg-surface rounded-lg border border-canvas-border p-4 max-w-sm mx-auto text-left">
+              <p className="text-xs text-text-muted font-medium mb-2">Expected format:</p>
+              <div className="text-xs text-secondary space-y-1 font-mono">
+                <p>Account | Period_1 | Period_2</p>
+                <p>Revenue | 1,200,000 | 1,350,000</p>
+                <p>COGS    |   800,000 |   870,000</p>
+                <p>EBITDA  |   400,000 |   480,000</p>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -1,7 +1,7 @@
 import { NavLink, useParams } from "react-router-dom";
 import {
   LayoutDashboard, FolderOpen, FileText, Brain, BarChart3,
-  ClipboardList, TrendingUp, Shield, Settings, LogOut, Lock, AlertTriangle
+  ClipboardList, TrendingUp, Shield, Settings, LogOut, Lock, AlertTriangle, Users
 } from "lucide-react";
 import { useAuthStore } from "../../store/auth";
 import { usePermissions } from "../../hooks/usePermissions";
@@ -21,14 +21,15 @@ function SidebarContent() {
         { to: perms.isAdvisor ? `/projects/${projectId}/red-flags` : "#", icon: AlertTriangle, label: "Red Flags", show: perms.isAdvisor },
         { to: !perms.isReadOnly ? `/projects/${projectId}/finance` : "#", icon: TrendingUp, label: "Finance", show: true, disabled: perms.isReadOnly },
         { to: `/projects/${projectId}/reports`, icon: BarChart3, label: "Reports", show: perms.canViewReports },
+        { to: `/projects/${projectId}/settings`, icon: Settings, label: "Deal Settings", show: perms.canManageProject },
       ]
     : [
-        { to: "#", icon: FileText, label: "Documents", disabled: true, show: true },
-        { to: "#", icon: ClipboardList, label: "Planning", disabled: true, show: true },
-        { to: "#", icon: Brain, label: "AI Analysis", disabled: true, show: true },
-        { to: "#", icon: AlertTriangle, label: "Red Flags", disabled: true, show: perms.isAdvisor },
-        { to: "#", icon: TrendingUp, label: "Finance", disabled: true, show: true },
-        { to: "#", icon: BarChart3, label: "Reports", disabled: true, show: perms.canViewReports },
+        { to: "#", icon: FileText, label: "Documents", disabled: true, show: true, tip: "Select a deal to view documents" },
+        { to: "#", icon: ClipboardList, label: "Planning", disabled: true, show: true, tip: perms.canViewPlanning ? "Select a deal first" : "Not available for your role" },
+        { to: "#", icon: Brain, label: "AI Analysis", disabled: true, show: true, tip: perms.isAdvisor ? "Select a deal first" : "Not available for your role" },
+        { to: "#", icon: AlertTriangle, label: "Red Flags", disabled: true, show: perms.isAdvisor, tip: "Select a deal first" },
+        { to: "#", icon: TrendingUp, label: "Finance", disabled: true, show: true, tip: !perms.isReadOnly ? "Select a deal first" : "Not available for your role" },
+        { to: "#", icon: BarChart3, label: "Reports", disabled: true, show: perms.canViewReports, tip: "Select a deal first" },
       ];
 
   const projectLinks = allProjectLinks.filter(l => l.show);
@@ -37,13 +38,15 @@ function SidebarContent() {
     { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", end: true, show: true },
     { to: "/projects", icon: FolderOpen, label: "Deals", end: true, show: true },
     ...projectLinks.map(l => ({ ...l, end: false })),
+    { to: "/admin/users", icon: Users, label: "Team Management", end: true, show: perms.role === "admin" },
     { to: "/audit", icon: Shield, label: "Audit Trail", end: true, show: perms.canViewAudit },
   ].filter(item => item.show);
 
-  // Split into sections: first 2 are "General", last is "System" (if audit visible), rest is "Project"
+  // Split into sections: first 2 are "General", system items (admin/audit), rest is "Project"
   const generalItems = NAV.slice(0, 2);
-  const auditItem = perms.canViewAudit ? NAV.filter(i => i.to === "/audit") : [];
-  const projectItems = NAV.filter(i => !generalItems.includes(i) && !auditItem.includes(i));
+  const systemPaths = ["/audit", "/admin/users"];
+  const systemItems = NAV.filter(i => systemPaths.includes(i.to));
+  const projectItems = NAV.filter(i => !generalItems.includes(i) && !systemItems.includes(i));
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-canvas-border bg-canvas-subtle">
@@ -74,15 +77,15 @@ function SidebarContent() {
           <NavItem key={item.label} item={item} />
         ))}
 
-        {projectId && auditItem.length > 0 && (
+        {systemItems.length > 0 && (
           <p className="px-3 pt-4 pb-1 text-[10px] text-text-muted uppercase tracking-widest">System</p>
         )}
-        {auditItem.map((item) => (
+        {systemItems.map((item) => (
           <NavItem key={item.label} item={item} />
         ))}
       </nav>
 
-      {/* User + logout */}
+      {/* User + actions */}
       <div className="border-t border-canvas-border p-3 space-y-1">
         <NavLink
           to="/settings"
@@ -99,17 +102,19 @@ function SidebarContent() {
           Settings
         </NavLink>
         <div className="flex items-center gap-3 rounded px-3 py-2">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-xs font-medium text-text-secondary">
-            {user?.full_name.charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-text-primary">{user?.full_name}</p>
-            <p className="truncate text-[10px] text-text-muted capitalize">{user?.role.replace("_", " ")}</p>
-          </div>
+          <NavLink to="/settings" className="flex items-center gap-3 min-w-0 flex-1 group" title="View profile & settings">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-xs font-medium text-text-secondary group-hover:bg-gold/10 group-hover:text-gold transition-colors">
+              {user?.full_name.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-medium text-text-primary group-hover:text-gold transition-colors">{user?.full_name}</p>
+              <p className="truncate text-[10px] text-text-muted capitalize">{user?.role.replace("_", " ")}</p>
+            </div>
+          </NavLink>
           <button
             onClick={logout}
             title="Sign Out"
-            className="text-text-muted hover:text-text-secondary transition-colors"
+            className="text-text-muted hover:text-risk-high transition-colors p-1 rounded hover:bg-risk-high/10"
           >
             <LogOut size={14} />
           </button>
@@ -127,7 +132,7 @@ function NavItem({ item }: { item: any }) {
     return (
       <span
         className="flex items-center gap-3 rounded px-3 py-2 text-sm text-text-muted/50 cursor-not-allowed group/disabled"
-        title="Select a deal to access this feature"
+        title={item.tip || "Select a deal to access this feature"}
       >
         <Icon size={15} />
         <span className="flex-1">{item.label}</span>

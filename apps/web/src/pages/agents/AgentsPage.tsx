@@ -160,6 +160,15 @@ export function AgentsPage() {
                     : run.finding_count > 0
                     ? ` · ${run.finding_count} finding${run.finding_count !== 1 ? "s" : ""}`
                     : ""}
+                  {(() => {
+                    if (run.status !== "completed" || run.finding_count === 0) return null;
+                    const idx = runs.filter(r => r.status === "completed").indexOf(run);
+                    const prevRun = runs.filter(r => r.status === "completed")[idx + 1];
+                    if (!prevRun) return null;
+                    const newFindings = run.finding_count - prevRun.finding_count;
+                    if (newFindings > 0) return ` · +${newFindings} new`;
+                    return null;
+                  })()}
                 </p>
                 {run.status === "completed" && run.total_documents === 0 && (
                   <p className="mt-1 flex items-center gap-1 text-xs text-yellow-500">

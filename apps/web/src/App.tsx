@@ -20,6 +20,8 @@ import ReportsPage from "./pages/reports/ReportsPage";
 import AuditLogsPage from "./pages/audit/AuditLogsPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import RedFlagsPage from "./pages/redflags/RedFlagsPage";
+import AdminUsersPage from "./pages/admin/AdminUsersPage";
+import ProjectSettingsPage from "./pages/projects/ProjectSettingsPage";
 
 const qc = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -130,6 +132,8 @@ function AppRoutes() {
         <Route path="/projects/:projectId/finance" element={<ProjectGuard><FinancePage /></ProjectGuard>} />
         <Route path="/projects/:projectId/reports" element={<ProjectGuard><ReportsPage /></ProjectGuard>} />
         <Route path="/projects/:projectId/red-flags" element={<ProjectGuard><RedFlagsPage /></ProjectGuard>} />
+        <Route path="/projects/:projectId/settings" element={<ProjectGuard><ProjectSettingsPage /></ProjectGuard>} />
+        <Route path="/admin/users" element={<RoleGuard allowedRoles={["admin"]}><AdminUsersPage /></RoleGuard>} />
         <Route path="/audit" element={<RoleGuard allowedRoles={["admin", "lead_advisor"]}><AuditLogsPage /></RoleGuard>} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

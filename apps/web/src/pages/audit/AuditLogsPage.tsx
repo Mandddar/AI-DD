@@ -1,29 +1,39 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { audit } from '../../api/audit';
-import { Shield, Search, Loader2, Clock, User, Activity } from 'lucide-react';
+import { Shield, Loader2, Clock, User, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const PAGE_SIZE = 50;
 
 export default function AuditLogsPage() {
   const [actionFilter, setActionFilter] = useState('');
   const [resourceFilter, setResourceFilter] = useState('');
+  const [page, setPage] = useState(0);
 
   const { data: logs, isLoading } = useQuery({
-    queryKey: ['audit-logs', actionFilter, resourceFilter],
+    queryKey: ['audit-logs', actionFilter, resourceFilter, page],
     queryFn: () => audit.getLogs({
       action: actionFilter || undefined,
       resource_type: resourceFilter || undefined,
-      limit: 200,
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
     }),
     refetchInterval: 10000,
   });
 
-  if (isLoading) {
+  // Reset page when filters change
+  const updateAction = (v: string) => { setActionFilter(v); setPage(0); };
+  const updateResource = (v: string) => { setResourceFilter(v); setPage(0); };
+
+  if (isLoading && page === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-gold" />
       </div>
     );
   }
+
+  const hasMore = (logs?.length ?? 0) === PAGE_SIZE;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -36,7 +46,7 @@ export default function AuditLogsPage() {
       <div className="card p-4 flex flex-wrap gap-4 items-end">
         <div>
           <label className="label">Action</label>
-          <select className="input text-sm" value={actionFilter} onChange={e => setActionFilter(e.target.value)}>
+          <select className="input text-sm" value={actionFilter} onChange={e => updateAction(e.target.value)}>
             <option value="">All Actions</option>
             <option value="login">Login</option>
             <option value="logout">Logout</option>
@@ -53,7 +63,7 @@ export default function AuditLogsPage() {
         </div>
         <div>
           <label className="label">Resource Type</label>
-          <select className="input text-sm" value={resourceFilter} onChange={e => setResourceFilter(e.target.value)}>
+          <select className="input text-sm" value={resourceFilter} onChange={e => updateResource(e.target.value)}>
             <option value="">All Types</option>
             <option value="api">API</option>
             <option value="document">Document</option>
@@ -62,12 +72,36 @@ export default function AuditLogsPage() {
             <option value="report">Report</option>
           </select>
         </div>
-        <span className="text-secondary text-xs ml-auto">{logs?.length || 0} entries</span>
+
+        {/* Pagination controls */}
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-secondary text-xs">
+            Page {page + 1} {logs ? `(${logs.length} entries)` : ''}
+          </span>
+          <button
+            className="btn-ghost px-2 py-1.5"
+            disabled={page === 0}
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            className="btn-ghost px-2 py-1.5"
+            disabled={!hasMore}
+            onClick={() => setPage(p => p + 1)}
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Logs */}
       <div className="card overflow-hidden">
-        {logs?.length ? (
+        {isLoading ? (
+          <div className="p-8 text-center">
+            <Loader2 size={24} className="mx-auto animate-spin text-text-muted" />
+          </div>
+        ) : logs?.length ? (
           <div className="divide-y divide-canvas-border/50">
             {logs.map(log => (
               <div key={log.id} className="p-4 hover:bg-surface/30 transition-colors">
@@ -106,7 +140,9 @@ export default function AuditLogsPage() {
           <div className="p-12 text-center">
             <Shield className="w-16 h-16 text-secondary/20 mx-auto mb-4" />
             <h3 className="text-primary font-display text-lg mb-2">No Audit Logs</h3>
-            <p className="text-secondary text-sm">Audit entries will appear here as users interact with the platform.</p>
+            <p className="text-secondary text-sm">
+              {page > 0 ? 'No more entries on this page.' : 'Audit entries will appear here as users interact with the platform.'}
+            </p>
           </div>
         )}
       </div>
