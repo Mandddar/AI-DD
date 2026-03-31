@@ -12,22 +12,22 @@ function SidebarContent() {
   const { user, logout } = useAuthStore();
   const perms = usePermissions();
 
-  // Build project links filtered by role permissions
+  // Build project links — show all standard items but disable those the role can't access
   const allProjectLinks = projectId
     ? [
         { to: `/projects/${projectId}/documents`, icon: FileText, label: "Documents", show: true },
-        { to: `/projects/${projectId}/planning`, icon: ClipboardList, label: "Planning", show: perms.canViewPlanning },
-        { to: `/projects/${projectId}/analysis`, icon: Brain, label: "AI Analysis", show: perms.isAdvisor },
-        { to: `/projects/${projectId}/red-flags`, icon: AlertTriangle, label: "Red Flags", show: perms.isAdvisor },
-        { to: `/projects/${projectId}/finance`, icon: TrendingUp, label: "Finance", show: !perms.isReadOnly },
+        { to: perms.canViewPlanning ? `/projects/${projectId}/planning` : "#", icon: ClipboardList, label: "Planning", show: true, disabled: !perms.canViewPlanning },
+        { to: perms.isAdvisor ? `/projects/${projectId}/analysis` : "#", icon: Brain, label: "AI Analysis", show: true, disabled: !perms.isAdvisor },
+        { to: perms.isAdvisor ? `/projects/${projectId}/red-flags` : "#", icon: AlertTriangle, label: "Red Flags", show: perms.isAdvisor },
+        { to: !perms.isReadOnly ? `/projects/${projectId}/finance` : "#", icon: TrendingUp, label: "Finance", show: true, disabled: perms.isReadOnly },
         { to: `/projects/${projectId}/reports`, icon: BarChart3, label: "Reports", show: perms.canViewReports },
       ]
     : [
         { to: "#", icon: FileText, label: "Documents", disabled: true, show: true },
-        { to: "#", icon: ClipboardList, label: "Planning", disabled: true, show: perms.canViewPlanning },
-        { to: "#", icon: Brain, label: "AI Analysis", disabled: true, show: perms.isAdvisor },
+        { to: "#", icon: ClipboardList, label: "Planning", disabled: true, show: true },
+        { to: "#", icon: Brain, label: "AI Analysis", disabled: true, show: true },
         { to: "#", icon: AlertTriangle, label: "Red Flags", disabled: true, show: perms.isAdvisor },
-        { to: "#", icon: TrendingUp, label: "Finance", disabled: true, show: !perms.isReadOnly },
+        { to: "#", icon: TrendingUp, label: "Finance", disabled: true, show: true },
         { to: "#", icon: BarChart3, label: "Reports", disabled: true, show: perms.canViewReports },
       ];
 
