@@ -27,11 +27,25 @@ async def get_audit_logs(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Query audit logs with optional filters. Admin-only in production."""
+    """Query audit logs. Admin sees all; Lead Advisor sees own logs only; others get 403."""
+    from modules.auth.models import UserRole
+
+    # Only admin and lead_advisor can access audit logs
+    if user.role not in (UserRole.admin, UserRole.lead_advisor):
+        from fastapi import HTTPException, status as http_status
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Audit trail is restricted to administrators."
+        )
+
     query = select(AuditLog).order_by(AuditLog.created_at.desc())
 
-    if user_id:
+    # Lead advisors only see their own logs
+    if user.role == UserRole.lead_advisor:
+        query = query.where(AuditLog.user_id == user.id)
+    elif user_id:
         query = query.where(AuditLog.user_id == user_id)
+
     if action:
         query = query.where(AuditLog.action == action)
     if resource_type:
@@ -49,11 +63,24 @@ async def get_project_audit_logs(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Get all audit logs related to a specific project."""
-    result = await db.execute(
+    """Get all audit logs related to a specific project. Admin and Lead Advisor only."""
+    from modules.auth.models import UserRole
+    if user.role not in (UserRole.admin, UserRole.lead_advisor):
+        from fastapi import HTTPException, status as http_status
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Audit trail is restricted to administrators."
+        )
+
+    query = (
         select(AuditLog)
         .where(AuditLog.resource_id == str(project_id))
         .order_by(AuditLog.created_at.desc())
         .limit(limit)
     )
+    # Lead advisors only see their own logs
+    if user.role == UserRole.lead_advisor:
+        query = query.where(AuditLog.user_id == user.id)
+
+    result = await db.execute(query)
     return list(result.scalars().all())

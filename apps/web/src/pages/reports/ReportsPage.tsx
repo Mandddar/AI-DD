@@ -154,9 +154,10 @@ export default function ReportsPage() {
               {generateError}
             </div>
           )}
-          <button className="btn-primary px-6 py-2" onClick={() => { setGenerateError(null); generate.mutate(); }}
+          <button className="btn-primary px-6 py-2 flex items-center gap-2" onClick={() => { setGenerateError(null); generate.mutate(); }}
             disabled={generate.isPending || !formData.title}>
-            {generate.isPending ? 'Generating...' : 'Generate Report'}
+            {generate.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+            {generate.isPending ? 'Generating report...' : 'Generate Report'}
           </button>
         </div>
       )}
@@ -258,13 +259,58 @@ export default function ReportsPage() {
                   return <p className="text-secondary italic">{String(content['Notice'])}</p>;
                 }
                 return (
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     {Object.entries(content).map(([key, value]) => (
                       <div key={key}>
-                        <h3 className="text-gold font-medium text-sm mb-1">{key}</h3>
-                        <p className="text-secondary text-sm whitespace-pre-wrap">
-                          {typeof value === 'string' ? value : JSON.stringify(value, null, 2)}
-                        </p>
+                        <h3 className="text-gold font-medium text-sm mb-2 border-b border-canvas-border/30 pb-1">{key}</h3>
+                        {typeof value === 'string' ? (
+                          <p className="text-secondary text-sm whitespace-pre-wrap">{value}</p>
+                        ) : Array.isArray(value) ? (
+                          <div className="space-y-3 ml-1">
+                            {value.map((item: any, idx: number) =>
+                              typeof item === 'object' && item !== null ? (
+                                <div key={idx} className="rounded-lg border border-canvas-border/40 p-3 bg-surface/20">
+                                  {item.Title && (
+                                    <p className="text-primary text-sm font-medium">{item.Title}</p>
+                                  )}
+                                  {item.Severity && (
+                                    <span className={`inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+                                      item.Severity === 'CRITICAL' ? 'bg-red-500/15 text-red-400' :
+                                      item.Severity === 'HIGH' ? 'bg-orange-500/15 text-orange-400' :
+                                      item.Severity === 'MEDIUM' ? 'bg-yellow-500/15 text-yellow-400' :
+                                      'bg-blue-500/15 text-blue-400'
+                                    }`}>{item.Severity}</span>
+                                  )}
+                                  {item.Category && (
+                                    <span className="inline-block mt-1 ml-2 text-xs text-secondary/70 px-2 py-0.5 rounded-full bg-surface">{item.Category}</span>
+                                  )}
+                                  {item.Workstream && (
+                                    <span className="inline-block mt-1 ml-2 text-xs text-secondary/70 px-2 py-0.5 rounded-full bg-surface">{item.Workstream}</span>
+                                  )}
+                                  {item.Description && (
+                                    <p className="text-secondary text-xs mt-2 leading-relaxed">{item.Description}</p>
+                                  )}
+                                  {item.Source && item.Source !== '—' && (
+                                    <p className="text-secondary/50 text-xs mt-1 italic">Source: {item.Source}</p>
+                                  )}
+                                </div>
+                              ) : (
+                                <p key={idx} className="text-secondary text-sm">{String(item)}</p>
+                              )
+                            )}
+                          </div>
+                        ) : typeof value === 'object' && value !== null ? (
+                          <div className="space-y-1 ml-1">
+                            {Object.entries(value).map(([k, v]) => (
+                              <div key={k} className="flex items-center gap-2 text-sm">
+                                <span className="text-secondary/70 capitalize">{k}:</span>
+                                <span className="text-primary font-medium">{String(v)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-secondary text-sm whitespace-pre-wrap">{String(value)}</p>
+                        )}
                       </div>
                     ))}
                   </div>

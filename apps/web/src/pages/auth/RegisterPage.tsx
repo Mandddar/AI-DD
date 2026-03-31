@@ -4,7 +4,7 @@ import { authApi } from "../../api/auth";
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "", full_name: "", role: "team_advisor" });
+  const [form, setForm] = useState({ email: "", password: "", full_name: "", role: "buyer" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -68,17 +68,9 @@ export function RegisterPage() {
               />
             </div>
             <div>
-              <label className="label">Role</label>
-              <select
-                className="input"
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-              >
-                <option value="lead_advisor">M&A Lead Advisor</option>
-                <option value="team_advisor">M&A Team Advisor</option>
-                <option value="seller">Seller</option>
-                <option value="buyer">Buyer / Investor</option>
-              </select>
+              <p className="text-xs text-text-muted mt-1">
+                Your account will be created with default access. An administrator will assign your role after registration.
+              </p>
             </div>
 
             {error && (

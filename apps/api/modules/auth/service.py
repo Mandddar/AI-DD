@@ -11,11 +11,13 @@ async def register_user(db: AsyncSession, data: RegisterRequest) -> User:
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
+    # Self-registration always assigns the least-privileged role (buyer).
+    # Admin must promote users to other roles after registration.
     user = User(
         email=data.email,
         hashed_password=hash_password(data.password),
         full_name=data.full_name,
-        role=data.role,
+        role=UserRole.buyer,
     )
     db.add(user)
     await db.commit()

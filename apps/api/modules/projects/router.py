@@ -4,8 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import UUID
 from core.database import get_db
-from modules.auth.dependencies import current_user, require_advisor, project_manager, project_reader
-from modules.auth.models import User
+from modules.auth.dependencies import current_user, require_advisor, require_role, project_manager, project_reader
+from modules.auth.models import User, UserRole
 from .models import Project, ProjectMember
 from .schemas import ProjectCreate, ProjectUpdate, ProjectResponse
 
@@ -16,11 +16,14 @@ class AddMemberRequest(BaseModel):
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 
+require_project_creator = require_role(UserRole.admin, UserRole.lead_advisor)
+
+
 @router.post("", response_model=ProjectResponse, status_code=201)
 async def create_project(
     data: ProjectCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_advisor),
+    user: User = Depends(require_project_creator),
 ):
     project = Project(**data.model_dump(), created_by=user.id)
     db.add(project)

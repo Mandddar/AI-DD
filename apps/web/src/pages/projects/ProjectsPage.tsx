@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, FolderOpen, Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { projectsApi, type CreateProjectData } from "../../api/projects";
+import { usePermissions } from "../../hooks/usePermissions";
 
 function CreateProjectModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
@@ -98,6 +99,7 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
 
 export function ProjectsPage() {
   const [showCreate, setShowCreate] = useState(false);
+  const perms = usePermissions();
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ["projects"],
     queryFn: projectsApi.list,
@@ -110,10 +112,12 @@ export function ProjectsPage() {
           <h1 className="font-display text-2xl text-text-primary">Deals</h1>
           <p className="mt-1 text-sm text-text-secondary">{projects.length} deal{projects.length !== 1 ? "s" : ""}</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="btn-primary">
-          <Plus size={14} />
-          New Deal
-        </button>
+        {perms.canCreateProject && (
+          <button onClick={() => setShowCreate(true)} className="btn-primary">
+            <Plus size={14} />
+            New Deal
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -123,11 +127,19 @@ export function ProjectsPage() {
       ) : projects.length === 0 ? (
         <div className="card p-12 text-center">
           <FolderOpen size={40} className="mx-auto mb-4 text-text-muted" />
-          <p className="text-sm font-medium text-text-primary">No deals yet</p>
-          <p className="mt-1 text-xs text-text-muted">Create your first deal to get started</p>
-          <button onClick={() => setShowCreate(true)} className="btn-primary mt-4">
-            <Plus size={14} /> New Deal
-          </button>
+          <p className="text-sm font-medium text-text-primary">
+            {perms.canCreateProject ? "No deals yet" : "No deals assigned to you yet"}
+          </p>
+          <p className="mt-1 text-xs text-text-muted">
+            {perms.canCreateProject
+              ? "Create your first deal to get started"
+              : "Your advisor will assign you to a deal when ready."}
+          </p>
+          {perms.canCreateProject && (
+            <button onClick={() => setShowCreate(true)} className="btn-primary mt-4">
+              <Plus size={14} /> New Deal
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid gap-3">

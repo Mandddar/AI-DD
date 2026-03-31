@@ -1,7 +1,7 @@
 import { NavLink, useParams } from "react-router-dom";
 import {
   LayoutDashboard, FolderOpen, FileText, Brain, BarChart3,
-  ClipboardList, TrendingUp, Shield, Settings, LogOut
+  ClipboardList, TrendingUp, Shield, Settings, LogOut, Lock
 } from "lucide-react";
 import { useAuthStore } from "../../store/auth";
 import { usePermissions } from "../../hooks/usePermissions";
@@ -84,7 +84,14 @@ function SidebarContent() {
       <div className="border-t border-canvas-border p-3 space-y-1">
         <NavLink
           to="/settings"
-          className="flex items-center gap-3 rounded px-3 py-2 text-sm text-text-secondary hover:bg-surface hover:text-text-primary transition-colors"
+          className={({ isActive }) =>
+            cn(
+              "flex items-center gap-3 rounded px-3 py-2 text-sm transition-colors",
+              isActive
+                ? "bg-gold/10 text-gold ring-1 ring-gold/20"
+                : "text-text-secondary hover:bg-surface hover:text-text-primary"
+            )
+          }
         >
           <Settings size={15} />
           Settings
@@ -97,7 +104,11 @@ function SidebarContent() {
             <p className="truncate text-xs font-medium text-text-primary">{user?.full_name}</p>
             <p className="truncate text-[10px] text-text-muted capitalize">{user?.role.replace("_", " ")}</p>
           </div>
-          <button onClick={logout} className="text-text-muted hover:text-text-secondary transition-colors">
+          <button
+            onClick={logout}
+            title="Sign Out"
+            className="text-text-muted hover:text-text-secondary transition-colors"
+          >
             <LogOut size={14} />
           </button>
         </div>
@@ -112,9 +123,13 @@ function NavItem({ item }: { item: any }) {
 
   if (disabled) {
     return (
-      <span className="flex items-center gap-3 rounded px-3 py-2 text-sm text-text-muted/50 cursor-not-allowed">
+      <span
+        className="flex items-center gap-3 rounded px-3 py-2 text-sm text-text-muted/50 cursor-not-allowed group/disabled"
+        title="Select a deal to access this feature"
+      >
         <Icon size={15} />
-        {item.label}
+        <span className="flex-1">{item.label}</span>
+        <Lock size={12} className="opacity-40" />
       </span>
     );
   }

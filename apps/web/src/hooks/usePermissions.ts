@@ -18,7 +18,7 @@ const ADVISOR_ROLES: UserRole[] = ["admin", "lead_advisor", "team_advisor"];
 const CONTRIBUTOR_ROLES: UserRole[] = ["admin", "lead_advisor", "team_advisor", "seller"];
 
 /** Roles that can create new projects */
-const PROJECT_CREATOR_ROLES: UserRole[] = ["admin", "lead_advisor", "team_advisor"];
+const PROJECT_CREATOR_ROLES: UserRole[] = ["admin", "lead_advisor"];
 
 export interface Permissions {
   role: UserRole | null;
@@ -123,7 +123,7 @@ export function usePermissions(): Permissions {
     canManageReports: isAdvisor,
     canViewReports: true,               // all members can view (buyer restricted to finalized)
     onlyFinalizedReports: isBuyer,
-    canViewAudit: isAdvisor,
+    canViewAudit: role === "admin" || role === "lead_advisor",
     canUpdateRequestList: isContributor, // advisors + sellers can answer queries
     isAdvisor,
     isReadOnly: isBuyer,

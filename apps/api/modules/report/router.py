@@ -65,7 +65,7 @@ async def _build_report_content(
     )
     latest_run = run_result.scalar_one_or_none()
     if not latest_run:
-        return {"Notice": "No completed AI analysis found. Run AI analysis on this project first, then generate the report."}
+        return {"Notice": "No completed AI analysis found. Run AI analysis on this project first, then try generating the report."}
 
     # Get findings — filter by workstream if detailed report
     findings_query = select(AgentFinding).where(AgentFinding.run_id == latest_run.id)
@@ -77,7 +77,10 @@ async def _build_report_content(
     findings = list(findings_result.scalars().all())
 
     if not findings:
-        return {"Notice": f"No findings found for this {'workstream' if workstream else 'project'}. Ensure AI analysis has completed."}
+        ws_name = (workstream or "").capitalize()
+        if report_type == "detailed_workstream" and workstream:
+            return {"Notice": f"No {ws_name} findings available. Please run AI analysis on the '{ws_name}' workstream first, then try generating this report again."}
+        return {"Notice": "No findings found for this project. Run AI analysis first, then generate the report."}
 
     # Build structured content
     severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}

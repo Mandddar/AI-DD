@@ -11,6 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { projectsApi } from "../api/projects";
+import { agentsApi } from "../api/agents";
 import { useAuthStore } from "../store/auth";
 import { usePermissions } from "../hooks/usePermissions";
 import { Link } from "react-router-dom";
@@ -39,6 +40,29 @@ export function DashboardPage() {
   const completed = projects.filter((p) => p.status === "completed").length;
   const firstName = user?.full_name.split(" ")[0] ?? "";
 
+  // Fetch red flags (critical/high findings) across all projects
+  const { data: redFlagCount = 0 } = useQuery({
+    queryKey: ["red-flags-count", projects.map((p) => p.id)],
+    queryFn: async () => {
+      if (projects.length === 0) return 0;
+      let total = 0;
+      for (const project of projects) {
+        try {
+          const runs = await agentsApi.listRuns(project.id);
+          const completedRuns = runs.filter((r) => r.status === "completed");
+          if (completedRuns.length === 0) continue;
+          const latestRun = completedRuns[0];
+          const run = await agentsApi.getRun(project.id, latestRun.id);
+          total += run.findings.filter(
+            (f) => f.severity === "critical" || f.severity === "high"
+          ).length;
+        } catch { /* project may not have runs */ }
+      }
+      return total;
+    },
+    enabled: projects.length > 0 && perms.isAdvisor,
+  });
+
   const stats = useMemo(
     () => [
       {
@@ -61,12 +85,12 @@ export function DashboardPage() {
       },
       {
         label: "Open Red Flags",
-        value: 0,
+        value: redFlagCount,
         icon: AlertTriangle,
         color: "text-risk-high",
         bg: "bg-risk-high/10",
         ring: "ring-risk-high/20",
-        trend: "Pending review",
+        trend: redFlagCount > 0 ? `${redFlagCount} critical/high findings` : "No red flags",
       },
       {
         label: "Completed Deals",
@@ -78,7 +102,7 @@ export function DashboardPage() {
         trend: completed > 0 ? `${completed} closed` : "None yet",
       },
     ],
-    [active, completed],
+    [active, completed, redFlagCount],
   );
 
   return (
@@ -144,14 +168,22 @@ export function DashboardPage() {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gold/5 ring-1 ring-gold/20">
               <FolderOpen size={24} className="text-gold/60" />
             </div>
-            <p className="text-sm font-medium text-text-primary">No deals yet</p>
-            <p className="mt-1 text-xs text-text-muted">Create your first deal to get started.</p>
-            <Link
-              to="/projects"
-              className="mt-4 inline-flex items-center gap-1.5 text-xs text-gold hover:text-gold-light transition-colors font-medium"
-            >
-              Create your first deal <ArrowRight size={12} />
-            </Link>
+            <p className="text-sm font-medium text-text-primary">
+              {perms.canCreateProject ? "No deals yet" : "No deals assigned to you yet"}
+            </p>
+            <p className="mt-1 text-xs text-text-muted">
+              {perms.canCreateProject
+                ? "Create your first deal to get started."
+                : "Your advisor will assign you to a deal when ready."}
+            </p>
+            {perms.canCreateProject && (
+              <Link
+                to="/projects"
+                className="mt-4 inline-flex items-center gap-1.5 text-xs text-gold hover:text-gold-light transition-colors font-medium"
+              >
+                Create your first deal <ArrowRight size={12} />
+              </Link>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-canvas-border">
