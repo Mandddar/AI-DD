@@ -32,3 +32,6 @@ Thumbs.db
 
 # ignore the uploads
 apps/api/uploads/
+
+# ignore the QA report
+QA_Report.pdf
