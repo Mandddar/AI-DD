@@ -40,14 +40,29 @@ async def _seed_admin():
     from core.security import hash_password
 
     async with AsyncSessionLocal() as db:
-        result = await db.execute(select(User).where(User.email == "mithilesh@gmail.com"))
+        result = await db.execute(select(User).where(User.email == "ayush@gmail.com"))
         if result.scalar_one_or_none():
             return  # already exists
 
         db.add(User(
-            email="mithilesh@gmail.com",
-            hashed_password=hash_password("mithilesh@19"),
-            full_name="mithilesh chandekar",
+            email="ayush@gmail.com",
+            hashed_password=hash_password("ayush@19"),
+            full_name="ayush chandekar",
+            role=UserRole.admin,
+            is_active=True,
+            disclaimer_accepted=True,
+        ))
+        await db.commit()
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(User).where(User.email == "aystar@gmail.com"))
+        if result.scalar_one_or_none():
+            return  # already exists
+
+        db.add(User(
+            email="aytar@gmail.com",
+            hashed_password=hash_password("aystar@19"),
+            full_name="aystar gamming",
             role=UserRole.admin,
             is_active=True,
             disclaimer_accepted=True,
