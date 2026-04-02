@@ -1,7 +1,7 @@
 import enum
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, DateTime, Enum as SAEnum, ForeignKey, BigInteger, Text
+from sqlalchemy import Column, String, DateTime, Enum as SAEnum, ForeignKey, BigInteger, Text, Integer, Float
 from sqlalchemy.dialects.postgresql import UUID
 from core.database import Base
 
@@ -14,10 +14,32 @@ class Workstream(str, enum.Enum):
 
 
 class DocumentStatus(str, enum.Enum):
+    """7-state document lifecycle per spec §6.1."""
+    requested = "requested"
     uploaded = "uploaded"
     processing = "processing"
     ready = "ready"
+    under_review = "under_review"
+    reviewed = "reviewed"
+    approved = "approved"
+    rejected = "rejected"
+    archived = "archived"
     failed = "failed"
+
+
+# Valid status transitions
+VALID_STATUS_TRANSITIONS = {
+    "requested": ["uploaded"],
+    "uploaded": ["processing"],
+    "processing": ["ready", "failed"],
+    "ready": ["under_review"],
+    "under_review": ["reviewed", "rejected"],
+    "reviewed": ["approved", "rejected", "under_review"],
+    "approved": ["archived"],
+    "rejected": ["under_review", "archived"],
+    "archived": [],
+    "failed": ["uploaded"],  # allow re-upload
+}
 
 
 class Document(Base):
@@ -39,6 +61,10 @@ class Document(Base):
     status = Column(SAEnum(DocumentStatus), nullable=False, default=DocumentStatus.uploaded)
     page_count = Column(String(20), nullable=True)
 
+    # Versioning
+    version_number = Column(Integer, nullable=False, default=1)
+    parent_doc_id = Column(UUID(as_uuid=True), ForeignKey("documents.id"), nullable=True)
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
                         onupdate=lambda: datetime.now(timezone.utc), nullable=False)
@@ -52,3 +78,15 @@ class DocumentText(Base):
     document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id"), nullable=False, unique=True)
     content = Column(Text, nullable=False)
     extracted_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class DocumentTag(Base):
+    """AI-generated or manual tags on documents (spec §6.1 — AI-powered automatic tagging)."""
+    __tablename__ = "document_tags"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id"), nullable=False, index=True)
+    tag = Column(String(100), nullable=False)
+    confidence = Column(Float, nullable=True)  # 0.0–1.0 for AI tags
+    source = Column(String(20), nullable=False, default="ai")  # "ai" or "manual"
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

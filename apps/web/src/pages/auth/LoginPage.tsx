@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldCheck, FileSearch, BarChart3 } from "lucide-react";
+import { ArrowLeft, ShieldCheck, FileSearch, BarChart3, Smartphone } from "lucide-react";
 import { authApi } from "../../api/auth";
 import { useAuthStore } from "../../store/auth";
 
@@ -14,6 +14,8 @@ export function LoginPage() {
   const navigate = useNavigate();
   const setUser = useAuthStore((s) => s.setUser);
   const [form, setForm] = useState({ email: "", password: "" });
+  const [totpCode, setTotpCode] = useState("");
+  const [needs2fa, setNeeds2fa] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +24,18 @@ export function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const tokens = await authApi.login(form);
+      const tokens = await authApi.login({
+        ...form,
+        totp_code: needs2fa ? totpCode : undefined,
+      });
+
+      // Check if 2FA is required
+      if (tokens.requires_2fa) {
+        setNeeds2fa(true);
+        setLoading(false);
+        return;
+      }
+
       localStorage.setItem("access_token", tokens.access_token);
       localStorage.setItem("refresh_token", tokens.refresh_token);
       const user = await authApi.me();
@@ -44,7 +57,6 @@ export function LoginPage() {
         </Link>
 
         <div>
-          {/* Logo */}
           <div className="mb-10">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30 mb-4">
               <span className="font-display text-xl font-semibold text-gold">DD</span>
@@ -75,7 +87,6 @@ export function LoginPage() {
       {/* Right panel — form */}
       <div className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm animate-fade-in">
-          {/* Mobile logo */}
           <div className="mb-8 text-center lg:hidden">
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30">
               <span className="font-display text-base font-semibold text-gold">DD</span>
@@ -84,33 +95,66 @@ export function LoginPage() {
           </div>
 
           <div>
-            <h2 className="font-display text-2xl text-text-primary">Welcome back</h2>
-            <p className="mt-1 text-sm text-text-secondary">Sign in to your account to continue.</p>
+            <h2 className="font-display text-2xl text-text-primary">
+              {needs2fa ? "Two-Factor Authentication" : "Welcome back"}
+            </h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              {needs2fa
+                ? "Enter the 6-digit code from your authenticator app."
+                : "Sign in to your account to continue."}
+            </p>
           </div>
 
           <form onSubmit={submit} className="mt-8 space-y-4">
-            <div>
-              <label className="label">Email address</label>
-              <input
-                className="input"
-                type="email"
-                placeholder="advisor@firm.com"
-                value={form.email}
-                onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-                required
-              />
-            </div>
-            <div>
-              <label className="label">Password</label>
-              <input
-                className="input"
-                type="password"
-                placeholder="••••••••"
-                value={form.password}
-                onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                required
-              />
-            </div>
+            {!needs2fa ? (
+              <>
+                <div>
+                  <label className="label">Email address</label>
+                  <input
+                    className="input"
+                    type="email"
+                    placeholder="advisor@firm.com"
+                    value={form.email}
+                    onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label">Password</label>
+                  <input
+                    className="input"
+                    type="password"
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="text-right">
+                  <Link to="/forgot-password" className="text-xs text-gold hover:text-gold-light transition-colors">
+                    Forgot password?
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <div>
+                <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-gold/5 border border-gold/20">
+                  <Smartphone size={16} className="text-gold" />
+                  <span className="text-xs text-gold">2FA is enabled for this account</span>
+                </div>
+                <label className="label">Authentication Code</label>
+                <input
+                  className="input text-center text-lg tracking-widest font-mono"
+                  type="text"
+                  placeholder="000000"
+                  maxLength={6}
+                  value={totpCode}
+                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
+                  autoFocus
+                  required
+                />
+              </div>
+            )}
 
             {error && (
               <div className="rounded-lg border border-risk-high/20 bg-risk-high/5 px-3 py-2.5">
@@ -122,20 +166,32 @@ export function LoginPage() {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-canvas border-t-canvas/30" />
-                  Signing in…
+                  {needs2fa ? "Verifying..." : "Signing in..."}
                 </span>
               ) : (
-                "Sign in"
+                needs2fa ? "Verify & Sign in" : "Sign in"
               )}
             </button>
+
+            {needs2fa && (
+              <button
+                type="button"
+                onClick={() => { setNeeds2fa(false); setTotpCode(""); setError(""); }}
+                className="btn-ghost w-full justify-center text-sm"
+              >
+                Back to login
+              </button>
+            )}
           </form>
 
-          <p className="mt-6 text-center text-xs text-text-muted">
-            Don't have an account?{" "}
-            <Link to="/register" className="text-gold hover:text-gold-light transition-colors font-medium">
-              Create one free
-            </Link>
-          </p>
+          {!needs2fa && (
+            <p className="mt-6 text-center text-xs text-text-muted">
+              Don't have an account?{" "}
+              <Link to="/register" className="text-gold hover:text-gold-light transition-colors font-medium">
+                Create one free
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     </div>

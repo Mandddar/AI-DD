@@ -8,6 +8,7 @@ import { AppShell } from "./components/layout/AppShell";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { RegisterPage } from "./pages/auth/RegisterPage";
 import { DisclaimerPage } from "./pages/auth/DisclaimerPage";
+import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ProjectsPage } from "./pages/projects/ProjectsPage";
 import { DocumentsPage } from "./pages/documents/DocumentsPage";
@@ -114,6 +115,7 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/disclaimer" element={<DisclaimerPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       {/* Protected */}
       <Route

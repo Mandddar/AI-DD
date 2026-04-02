@@ -4,8 +4,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Upload, FileText, FileSpreadsheet, File, Trash2,
   CheckCircle, Loader2, AlertCircle, Clock, Download,
+  Search, Tag, GitBranch, ChevronDown, ChevronUp,
+  Eye, ShieldCheck, XCircle, Archive,
 } from "lucide-react";
-import { documentsApi, type Document, type Workstream } from "../../api/documents";
+import { documentsApi, type Document, type DocumentTag, type SearchResult, type Workstream, type DocumentStatus } from "../../api/documents";
 import { cn } from "../../lib/utils";
 import { usePermissions } from "../../hooks/usePermissions";
 
@@ -23,17 +25,24 @@ function fileIcon(mimeType: string) {
   return <File size={16} className="text-text-secondary" />;
 }
 
-function statusBadge(status: Document["status"]) {
-  const map = {
+// 7-state lifecycle status badges (spec §6.1)
+function statusBadge(status: DocumentStatus) {
+  const map: Record<DocumentStatus, { icon: React.ReactNode; label: string; cls: string }> = {
+    requested: { icon: <Clock size={11} />, label: "Requested", cls: "text-text-muted bg-surface" },
     uploaded: { icon: <Clock size={11} />, label: "Uploaded", cls: "text-text-muted bg-surface" },
     processing: { icon: <Loader2 size={11} className="animate-spin" />, label: "Processing", cls: "text-gold bg-gold/10" },
     ready: { icon: <CheckCircle size={11} />, label: "Ready", cls: "text-risk-low bg-risk-low/10" },
+    under_review: { icon: <Eye size={11} />, label: "Under Review", cls: "text-gold bg-gold/10" },
+    reviewed: { icon: <ShieldCheck size={11} />, label: "Reviewed", cls: "text-blue-400 bg-blue-400/10" },
+    approved: { icon: <CheckCircle size={11} />, label: "Approved", cls: "text-risk-low bg-risk-low/10" },
+    rejected: { icon: <XCircle size={11} />, label: "Rejected", cls: "text-risk-high bg-risk-high/10" },
+    archived: { icon: <Archive size={11} />, label: "Archived", cls: "text-text-muted bg-surface" },
     failed: { icon: <AlertCircle size={11} />, label: "Failed", cls: "text-risk-high bg-risk-high/10" },
   };
-  const { icon, label, cls } = map[status];
+  const entry = map[status] || map.uploaded;
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium", cls)}>
-      {icon} {label}
+    <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium", entry.cls)}>
+      {entry.icon} {entry.label}
     </span>
   );
 }
@@ -132,12 +141,45 @@ function NdaGate({ projectId, children }: { projectId: string; children: React.R
   );
 }
 
+function TagBadges({ projectId, documentId }: { projectId: string; documentId: string }) {
+  const { data: tags = [] } = useQuery({
+    queryKey: ["doc-tags", projectId, documentId],
+    queryFn: () => documentsApi.getTags(projectId, documentId),
+    staleTime: 60_000,
+  });
+
+  if (tags.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {tags.slice(0, 4).map((t) => (
+        <span
+          key={t.id}
+          className={cn(
+            "inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium",
+            t.source === "ai" ? "bg-gold/10 text-gold" : "bg-surface text-text-secondary"
+          )}
+          title={t.confidence ? `Confidence: ${Math.round(t.confidence * 100)}%` : "Manual tag"}
+        >
+          <Tag size={8} />
+          {t.tag}
+        </span>
+      ))}
+      {tags.length > 4 && (
+        <span className="text-[10px] text-text-muted">+{tags.length - 4}</span>
+      )}
+    </div>
+  );
+}
+
 export function DocumentsPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const qc = useQueryClient();
   const perms = usePermissions();
   const [workstream, setWorkstream] = useState<Workstream>("general");
   const [uploading, setUploading] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ["documents", projectId],
@@ -148,8 +190,21 @@ export function DocumentsPage() {
     },
   });
 
+  const { data: searchResults = [], isFetching: searching } = useQuery({
+    queryKey: ["doc-search", projectId, searchQuery],
+    queryFn: () => documentsApi.search(projectId!, searchQuery),
+    enabled: searchQuery.length >= 2,
+    staleTime: 10_000,
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => documentsApi.delete(projectId!, id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["documents", projectId] }),
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: ({ docId, status }: { docId: string; status: DocumentStatus }) =>
+      documentsApi.updateStatus(projectId!, docId, status),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["documents", projectId] }),
   });
 
@@ -165,6 +220,17 @@ export function DocumentsPage() {
     }
   };
 
+  // Determine available next statuses for a document
+  const getNextStatuses = (status: DocumentStatus): DocumentStatus[] => {
+    const transitions: Record<string, DocumentStatus[]> = {
+      ready: ["under_review"],
+      under_review: ["reviewed", "rejected"],
+      reviewed: ["approved", "rejected"],
+      rejected: ["under_review"],
+    };
+    return transitions[status] || [];
+  };
+
   return (
     <NdaGate projectId={projectId!}>
     <div className="p-6 space-y-5 animate-fade-in">
@@ -173,33 +239,79 @@ export function DocumentsPage() {
           <h1 className="font-display text-2xl text-text-primary">Documents</h1>
           <p className="mt-1 text-sm text-text-secondary">
             {documents.length} document{documents.length !== 1 ? "s" : ""} ·{" "}
-            {documents.filter((d) => d.status === "ready").length} ready
+            {documents.filter((d) => d.status === "ready" || d.status === "approved").length} ready
           </p>
         </div>
 
-        {/* Workstream selector */}
-        {perms.canUploadDocuments && (
+        <div className="flex items-center gap-3">
+          {/* Full-text search toggle */}
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className={cn(
+              "flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors",
+              showSearch ? "bg-gold text-canvas" : "bg-surface text-text-secondary hover:bg-surface-hover"
+            )}
+          >
+            <Search size={14} /> Search
+          </button>
+
+          {/* Workstream selector */}
+          {perms.canUploadDocuments && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-muted">Upload to:</span>
+              <div className="flex rounded border border-canvas-border overflow-hidden">
+                {WORKSTREAMS.map((ws) => (
+                  <button
+                    key={ws.value}
+                    onClick={() => setWorkstream(ws.value)}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-medium transition-colors",
+                      workstream === ws.value
+                        ? "bg-gold text-canvas"
+                        : "bg-canvas-card text-text-secondary hover:bg-surface"
+                    )}
+                  >
+                    {ws.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Full-text search */}
+      {showSearch && (
+        <div className="card p-4 space-y-3 animate-fade-in">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-text-muted">Upload to:</span>
-            <div className="flex rounded border border-canvas-border overflow-hidden">
-              {WORKSTREAMS.map((ws) => (
-                <button
-                  key={ws.value}
-                  onClick={() => setWorkstream(ws.value)}
-                  className={cn(
-                    "px-3 py-1.5 text-xs font-medium transition-colors",
-                    workstream === ws.value
-                      ? "bg-gold text-canvas"
-                      : "bg-canvas-card text-text-secondary hover:bg-surface"
-                  )}
-                >
-                  {ws.label}
-                </button>
+            <Search size={16} className="text-text-muted" />
+            <input
+              className="input flex-1"
+              placeholder="Search document contents..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              autoFocus
+            />
+            {searching && <Loader2 size={16} className="animate-spin text-gold" />}
+          </div>
+          {searchResults.length > 0 && (
+            <div className="divide-y divide-canvas-border max-h-64 overflow-y-auto">
+              {searchResults.map((r, i) => (
+                <div key={i} className="py-2 px-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-text-primary">{r.document_name}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface text-text-muted capitalize">{r.workstream}</span>
+                  </div>
+                  <p className="text-xs text-text-secondary mt-0.5 line-clamp-2">{r.snippet}</p>
+                </div>
               ))}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+          {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
+            <p className="text-xs text-text-muted text-center py-2">No results found.</p>
+          )}
+        </div>
+      )}
 
       {perms.isReadOnly && (
         <div className="rounded-lg border border-canvas-border bg-surface/50 px-4 py-2.5 text-sm text-text-secondary">
@@ -215,7 +327,7 @@ export function DocumentsPage() {
           {uploading.map((name) => (
             <div key={name} className="flex items-center gap-2 rounded bg-gold/5 px-3 py-2 text-xs text-gold">
               <Loader2 size={12} className="animate-spin" />
-              Uploading {name}…
+              Uploading {name}...
             </div>
           ))}
         </div>
@@ -233,49 +345,77 @@ export function DocumentsPage() {
         </div>
       ) : (
         <div className="card divide-y divide-canvas-border">
-          {documents.map((doc) => (
-            <div key={doc.id} className="flex items-center gap-4 px-4 py-3 hover:bg-surface/30 transition-colors">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-surface">
-                {fileIcon(doc.mime_type)}
-              </div>
+          {documents.map((doc) => {
+            const nextStatuses = perms.canDeleteDocuments ? getNextStatuses(doc.status) : [];
 
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-text-primary">{doc.name}</p>
-                <p className="text-xs text-text-muted">
-                  {formatBytes(doc.size_bytes)}
-                  {doc.page_count ? ` · ${doc.page_count} pages` : ""}
-                  {" · "}
-                  <span className="capitalize">{doc.workstream}</span>
-                  {" · "}
-                  {new Date(doc.created_at).toLocaleDateString("en-GB")}
-                </p>
-              </div>
+            return (
+              <div key={doc.id} className="flex items-center gap-4 px-4 py-3 hover:bg-surface/30 transition-colors">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-surface">
+                  {fileIcon(doc.mime_type)}
+                </div>
 
-              <div className="flex items-center gap-3">
-                {statusBadge(doc.status)}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium text-text-primary">{doc.name}</p>
+                    {doc.version_number > 1 && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-text-muted bg-surface rounded px-1.5 py-0.5">
+                        <GitBranch size={8} /> v{doc.version_number}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-text-muted">
+                    {formatBytes(doc.size_bytes)}
+                    {doc.page_count ? ` · ${doc.page_count} pages` : ""}
+                    {" · "}
+                    <span className="capitalize">{doc.workstream}</span>
+                    {" · "}
+                    {new Date(doc.created_at).toLocaleDateString("en-GB")}
+                  </p>
+                  <TagBadges projectId={projectId!} documentId={doc.id} />
+                </div>
 
-                <a
-                  href={documentsApi.downloadUrl(doc.project_id, doc.id)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-text-muted hover:text-text-secondary transition-colors"
-                  title="Download"
-                >
-                  <Download size={14} />
-                </a>
+                <div className="flex items-center gap-3">
+                  {statusBadge(doc.status)}
 
-                {perms.canDeleteDocuments && (
-                  <button
-                    onClick={() => deleteMutation.mutate(doc.id)}
-                    className="text-text-muted hover:text-risk-high transition-colors"
-                    title="Delete"
+                  {/* Status transition buttons */}
+                  {nextStatuses.length > 0 && (
+                    <div className="flex gap-1">
+                      {nextStatuses.map((ns) => (
+                        <button
+                          key={ns}
+                          onClick={() => statusMutation.mutate({ docId: doc.id, status: ns })}
+                          className="text-[10px] px-1.5 py-0.5 rounded bg-surface hover:bg-surface-hover text-text-secondary transition-colors capitalize"
+                          title={`Move to ${ns.replace('_', ' ')}`}
+                        >
+                          {ns.replace('_', ' ')}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <a
+                    href={documentsApi.downloadUrl(doc.project_id, doc.id)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-text-muted hover:text-text-secondary transition-colors"
+                    title="Download"
                   >
-                    <Trash2 size={14} />
-                  </button>
-                )}
+                    <Download size={14} />
+                  </a>
+
+                  {perms.canDeleteDocuments && (
+                    <button
+                      onClick={() => deleteMutation.mutate(doc.id)}
+                      className="text-text-muted hover:text-risk-high transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

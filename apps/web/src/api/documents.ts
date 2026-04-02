@@ -1,7 +1,9 @@
 import { api } from "./client";
 
 export type Workstream = "legal" | "tax" | "finance" | "general";
-export type DocumentStatus = "uploaded" | "processing" | "ready" | "failed";
+export type DocumentStatus =
+  | "requested" | "uploaded" | "processing" | "ready"
+  | "under_review" | "reviewed" | "approved" | "rejected" | "archived" | "failed";
 
 export interface Document {
   id: string;
@@ -14,6 +16,8 @@ export interface Document {
   workstream: Workstream;
   status: DocumentStatus;
   page_count: string | null;
+  version_number: number;
+  parent_doc_id: string | null;
   created_at: string;
 }
 
@@ -21,6 +25,23 @@ export interface DocumentText {
   document_id: string;
   content: string;
   extracted_at: string;
+}
+
+export interface DocumentTag {
+  id: string;
+  document_id: string;
+  tag: string;
+  confidence: number | null;
+  source: "ai" | "manual";
+  created_at: string;
+}
+
+export interface SearchResult {
+  document_id: string;
+  document_name: string;
+  workstream: string;
+  snippet: string;
+  rank: number;
 }
 
 export const documentsApi = {
@@ -44,4 +65,31 @@ export const documentsApi = {
 
   downloadUrl: (projectId: string, documentId: string) =>
     `${api.defaults.baseURL}/projects/${projectId}/documents/${documentId}/download`,
+
+  // Status update (7-state lifecycle)
+  updateStatus: (projectId: string, documentId: string, status: DocumentStatus) =>
+    api.patch<Document>(`/projects/${projectId}/documents/${documentId}/status`, { status }).then((r) => r.data),
+
+  // Versioning
+  uploadVersion: (projectId: string, documentId: string, file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return api.post<Document>(`/projects/${projectId}/documents/${documentId}/versions`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }).then((r) => r.data);
+  },
+
+  listVersions: (projectId: string, documentId: string) =>
+    api.get<Document[]>(`/projects/${projectId}/documents/${documentId}/versions`).then((r) => r.data),
+
+  // Tags
+  getTags: (projectId: string, documentId: string) =>
+    api.get<DocumentTag[]>(`/projects/${projectId}/documents/${documentId}/tags`).then((r) => r.data),
+
+  addTag: (projectId: string, documentId: string, tag: string) =>
+    api.post<DocumentTag>(`/projects/${projectId}/documents/${documentId}/tags`, { tag }).then((r) => r.data),
+
+  // Full-text search
+  search: (projectId: string, query: string) =>
+    api.get<SearchResult[]>(`/projects/${projectId}/documents/search/fulltext`, { params: { q: query } }).then((r) => r.data),
 };

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls m:/programming/AI-DD/apps/api/.venv/Scripts/pip*)",
+      "Bash(ls m:/programming/AI-DD/apps/api/.venv/Scripts/python*)",
+      "Bash(ls m:/programming/AI-DD/apps/api/.venv/Scripts/uv*)",
+      "Bash(m:/programming/AI-DD/apps/api/.venv/Scripts/python.exe -m pip install pyotp)",
+      "Bash(uv --version)",
+      "Bash(uv pip:*)",
+      "Bash(uv run python -c ':*)",
+      "Bash(npx vite:*)"
+    ]
+  }
+}

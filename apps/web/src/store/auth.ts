@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { User } from "../types";
+import { authApi } from "../api/auth";
 
 interface AuthState {
   user: User | null;
@@ -15,6 +16,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   setUser: (user) => set({ user }),
   setLoading: (isLoading) => set({ isLoading }),
   logout: () => {
+    // Call backend to blacklist token, then clear local state
+    authApi.logout().catch(() => {});
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     set({ user: null });
