@@ -21,6 +21,14 @@ export interface RequestItem {
   answer_document: string | null;
   status: 'open' | 'partial' | 'query' | 'completed';
   priority: 'high' | 'medium' | 'low';
+  assigned_to: string | null;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string | null;
 }
 
 export interface BasicDataInput {
@@ -49,6 +57,9 @@ export const planning = {
   getRequestList: (projectId: string) =>
     api.get<RequestItem[]>(`/projects/${projectId}/planning/request-list`).then(r => r.data),
 
-  updateRequestItem: (projectId: string, itemId: string, data: Partial<Pick<RequestItem, 'status' | 'priority' | 'answer_document'>>) =>
+  updateRequestItem: (projectId: string, itemId: string, data: Partial<Pick<RequestItem, 'status' | 'priority' | 'answer_document' | 'assigned_to'>>) =>
     api.patch<RequestItem>(`/projects/${projectId}/planning/request-list/${itemId}`, data).then(r => r.data),
+
+  getTeamMembers: (projectId: string) =>
+    api.get<TeamMember[]>(`/projects/${projectId}/planning/team-members`).then(r => r.data),
 };

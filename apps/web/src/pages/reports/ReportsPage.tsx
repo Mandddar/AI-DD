@@ -27,7 +27,7 @@ export default function ReportsPage() {
       const saved = sessionStorage.getItem(draftKey);
       if (saved) return JSON.parse(saved);
     } catch {}
-    return { report_type: 'detailed_workstream', workstream: 'legal', title: '' };
+    return { report_type: 'detailed_workstream', report_format: 'docx', workstream: 'legal', title: '' };
   });
 
   // Persist form data to session storage whenever it changes
@@ -48,7 +48,7 @@ export default function ReportsPage() {
       queryClient.invalidateQueries({ queryKey: ['reports', projectId] });
       setShowForm(false);
       setGenerateError(null);
-      const fresh = { report_type: 'detailed_workstream', workstream: 'legal', title: '' };
+      const fresh = { report_type: 'detailed_workstream', report_format: 'docx', workstream: 'legal', title: '' };
       setFormData(fresh);
       sessionStorage.removeItem(draftKey);
     },
@@ -99,7 +99,8 @@ export default function ReportsPage() {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         const safe = report.title.replace(/[^a-zA-Z0-9 _-]/g, '_');
-        a.download = `${safe}.docx`;
+        const ext = report.report_format === 'xlsx' ? 'xlsx' : 'docx';
+        a.download = `${safe}.${ext}`;
         a.click();
         URL.revokeObjectURL(a.href);
       })
@@ -140,6 +141,14 @@ export default function ReportsPage() {
                 {REPORT_TYPES.map(t => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Format</label>
+              <select className="input w-full" value={formData.report_format || 'docx'}
+                onChange={e => setFormData(d => ({ ...d, report_format: e.target.value }))}>
+                <option value="docx">Word (.docx)</option>
+                <option value="xlsx">Excel (.xlsx)</option>
               </select>
             </div>
             {formData.report_type === 'detailed_workstream' && (
@@ -189,6 +198,7 @@ export default function ReportsPage() {
                     <p className="text-secondary text-sm mt-1">
                       {REPORT_TYPES.find(t => t.value === report.report_type)?.label}
                       {report.workstream && ` · ${report.workstream}`}
+                      {' · '}<span className="uppercase text-xs font-mono">{report.report_format || 'docx'}</span>
                     </p>
                     <p className="text-secondary/60 text-xs mt-1">{new Date(report.created_at).toLocaleString()}</p>
                   </div>

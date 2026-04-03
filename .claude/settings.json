@@ -8,7 +8,11 @@
       "Bash(uv --version)",
       "Bash(uv pip:*)",
       "Bash(uv run python -c ':*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(bash /tmp/show_tree.sh)",
+      "Bash(find /m/programming/AI-DD/apps/api/modules -type f -name \"*.py\" -exec grep -l \"Workbook\\\\|from openpyxl import\" {} \\\\;)",
+      "Bash(python -c ':*)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('alembic/versions/002_add_folders_assignments.py'\\).read\\(\\)\\); print\\('OK'\\)\")"
     ]
   }
 }

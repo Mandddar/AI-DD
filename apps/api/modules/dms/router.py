@@ -8,11 +8,12 @@ from core.database import get_db
 from modules.auth.dependencies import current_user, project_manager, project_contributor, project_reader
 from modules.auth.models import User
 from .models import (
-    Document, DocumentText, DocumentTag, Workstream, DocumentStatus, VALID_STATUS_TRANSITIONS,
+    Document, DocumentText, DocumentTag, Folder, Workstream, DocumentStatus, VALID_STATUS_TRANSITIONS,
 )
 from .schemas import (
     DocumentResponse, DocumentTextResponse, DocumentTagResponse,
     DocumentTagCreate, DocumentStatusUpdate,
+    FolderCreate, FolderResponse, BulkDeleteRequest, BulkStatusUpdateRequest,
 )
 from .storage import save_file, delete_file
 from modules.ocr.extractor import extract_text
@@ -508,3 +509,165 @@ async def search_documents(
         }
         for r in rows
     ]
+
+
+# ── Folder Structure ──────────────────────────────────────
+
+@router.post("/folders", response_model=FolderResponse, status_code=201)
+async def create_folder(
+    project_id: UUID,
+    data: FolderCreate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_manager),
+):
+    """Create a folder in the project's document structure (spec §6.1)."""
+    if data.parent_id:
+        parent = await db.get(Folder, data.parent_id)
+        if not parent or parent.project_id != project_id:
+            raise HTTPException(status_code=404, detail="Parent folder not found")
+
+    folder = Folder(
+        project_id=project_id,
+        parent_id=data.parent_id,
+        name=data.name,
+        created_by=user.id,
+    )
+    db.add(folder)
+    await db.commit()
+    await db.refresh(folder)
+    return folder
+
+
+@router.get("/folders", response_model=list[FolderResponse])
+async def list_folders(
+    project_id: UUID,
+    parent_id: UUID | None = None,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_reader),
+):
+    """List folders in a project, optionally filtered by parent."""
+    query = select(Folder).where(Folder.project_id == project_id)
+    if parent_id:
+        query = query.where(Folder.parent_id == parent_id)
+    else:
+        query = query.where(Folder.parent_id.is_(None))
+    query = query.order_by(Folder.name)
+    result = await db.execute(query)
+    return list(result.scalars().all())
+
+
+@router.delete("/folders/{folder_id}", status_code=204)
+async def delete_folder(
+    project_id: UUID,
+    folder_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_manager),
+):
+    """Delete a folder (must be empty)."""
+    folder = await db.get(Folder, folder_id)
+    if not folder or folder.project_id != project_id:
+        raise HTTPException(status_code=404, detail="Folder not found")
+
+    # Check for child folders
+    children = await db.execute(select(Folder).where(Folder.parent_id == folder_id).limit(1))
+    if children.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Folder has subfolders — delete them first")
+
+    # Check for documents in folder
+    docs = await db.execute(select(Document).where(Document.folder_id == folder_id).limit(1))
+    if docs.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Folder contains documents — move or delete them first")
+
+    await db.delete(folder)
+    await db.commit()
+
+
+@router.post("/init-folders")
+async def initialize_folder_structure(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_manager),
+):
+    """Auto-generate default folder structure per deal/workstream (spec §6.1)."""
+    existing = await db.execute(select(Folder).where(Folder.project_id == project_id).limit(1))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Folder structure already exists")
+
+    default_structure = {
+        "Legal": ["Contracts", "Corporate Documents", "Employment", "IP & Licenses", "Litigation", "Insurance"],
+        "Tax": ["Tax Returns", "Tax Audits", "Transfer Pricing", "VAT"],
+        "Finance": ["Annual Statements", "Interim Reports", "Budget & Planning", "Working Capital"],
+        "General": ["Correspondence", "NDA", "Miscellaneous"],
+    }
+
+    created = []
+    for ws_name, subfolders in default_structure.items():
+        ws_folder = Folder(project_id=project_id, name=ws_name, created_by=user.id)
+        db.add(ws_folder)
+        await db.flush()
+        created.append(ws_name)
+
+        for sub_name in subfolders:
+            db.add(Folder(project_id=project_id, parent_id=ws_folder.id, name=sub_name, created_by=user.id))
+
+    await db.commit()
+    return {"created": created, "total_folders": sum(1 + len(v) for v in default_structure.values())}
+
+
+# ── Bulk Operations ───────────────────────────────────────
+
+@router.post("/bulk/delete", status_code=200)
+async def bulk_delete_documents(
+    project_id: UUID,
+    data: BulkDeleteRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_manager),
+):
+    """Delete multiple documents at once."""
+    from sqlalchemy import delete as sql_delete
+    from modules.agent.models import DocumentChunk
+
+    deleted = 0
+    for doc_id in data.document_ids:
+        doc = await db.get(Document, doc_id)
+        if not doc or doc.project_id != project_id:
+            continue
+        await db.execute(sql_delete(DocumentChunk).where(DocumentChunk.document_id == doc_id))
+        await db.execute(sql_delete(DocumentText).where(DocumentText.document_id == doc_id))
+        await db.execute(sql_delete(DocumentTag).where(DocumentTag.document_id == doc_id))
+        await delete_file(doc.storage_path)
+        await db.delete(doc)
+        deleted += 1
+
+    await db.commit()
+    return {"deleted": deleted}
+
+
+@router.post("/bulk/status", status_code=200)
+async def bulk_update_status(
+    project_id: UUID,
+    data: BulkStatusUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_manager),
+):
+    """Update status of multiple documents at once."""
+    updated = 0
+    skipped = 0
+    target = data.status.value
+
+    for doc_id in data.document_ids:
+        doc = await db.get(Document, doc_id)
+        if not doc or doc.project_id != project_id:
+            skipped += 1
+            continue
+
+        current = doc.status.value
+        allowed = VALID_STATUS_TRANSITIONS.get(current, [])
+        if target in allowed:
+            doc.status = data.status
+            updated += 1
+        else:
+            skipped += 1
+
+    await db.commit()
+    return {"updated": updated, "skipped": skipped}

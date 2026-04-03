@@ -8,12 +8,20 @@ Libraries:
   - openpyxl — Excel .xlsx parsing
   - pandas — CSV / TSV parsing
   - pytesseract + Pillow — OCR for scanned/image documents
+  - google-cloud-documentai — Google Document AI (primary OCR, spec §2.4)
 """
 import io
 import logging
+import os
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+# Google Document AI configuration (spec §2.4)
+_GOOGLE_DOC_AI_ENABLED = bool(os.getenv("GOOGLE_DOCUMENT_AI_PROCESSOR_ID"))
+_GOOGLE_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "")
+_GOOGLE_LOCATION = os.getenv("GOOGLE_DOCUMENT_AI_LOCATION", "eu")  # EU region per spec §2.3
+_GOOGLE_PROCESSOR_ID = os.getenv("GOOGLE_DOCUMENT_AI_PROCESSOR_ID", "")
 
 
 def extract_text(file_bytes: bytes, mime_type: str, filename: str) -> tuple[str, str | None]:
@@ -45,7 +53,7 @@ def extract_text(file_bytes: bytes, mime_type: str, filename: str) -> tuple[str,
         return file_bytes.decode("utf-8", errors="replace"), None
 
     if mime_type.startswith("image/") or ext in (".jpg", ".jpeg", ".png", ".tiff", ".tif", ".bmp"):
-        return _extract_image_ocr(file_bytes), None
+        return _extract_image_ocr(file_bytes, mime_type), None
 
     return "", None
 
@@ -62,17 +70,33 @@ def _extract_pdf(data: bytes) -> tuple[str, str]:
         if text.strip():
             pages.append(text)
         else:
-            # Scanned page — OCR fallback via pytesseract
-            try:
-                pix = page.get_pixmap(dpi=300)
-                img_bytes = pix.tobytes("png")
-                ocr_text = _ocr_image_bytes(img_bytes)
-                if ocr_text.strip():
-                    pages.append(ocr_text)
-            except Exception as e:
-                logger.warning("OCR fallback failed for page %d: %s", page.number, e)
+            # Scanned page — try Google Document AI first, then pytesseract fallback
+            ocr_text = _ocr_scanned_page(page, data)
+            if ocr_text.strip():
+                pages.append(ocr_text)
     doc.close()
     return "\n\n".join(pages), str(page_count)
+
+
+def _ocr_scanned_page(page, full_pdf_bytes: bytes) -> str:
+    """OCR a scanned page — Google Document AI primary, pytesseract fallback."""
+    # Try Google Document AI first if configured
+    if _GOOGLE_DOC_AI_ENABLED:
+        try:
+            result = _google_document_ai_ocr(full_pdf_bytes, "application/pdf")
+            if result.strip():
+                return result
+        except Exception as e:
+            logger.warning("Google Document AI failed, falling back to Tesseract: %s", e)
+
+    # Pytesseract fallback
+    try:
+        pix = page.get_pixmap(dpi=300)
+        img_bytes = pix.tobytes("png")
+        return _ocr_tesseract(img_bytes)
+    except Exception as e:
+        logger.warning("Tesseract OCR fallback failed for page %d: %s", page.number, e)
+    return ""
 
 
 def _extract_docx(data: bytes) -> str:
@@ -106,13 +130,46 @@ def _extract_csv_tsv(data: bytes, ext: str) -> str:
         return data.decode("utf-8", errors="replace")
 
 
-def _extract_image_ocr(data: bytes) -> str:
-    """OCR an image file using pytesseract + Pillow."""
-    return _ocr_image_bytes(data)
+def _extract_image_ocr(data: bytes, mime_type: str = "image/png") -> str:
+    """OCR an image file — Google Document AI primary, pytesseract fallback."""
+    if _GOOGLE_DOC_AI_ENABLED:
+        try:
+            result = _google_document_ai_ocr(data, mime_type)
+            if result.strip():
+                return result
+        except Exception as e:
+            logger.warning("Google Document AI failed for image, falling back to Tesseract: %s", e)
+
+    return _ocr_tesseract(data)
 
 
-def _ocr_image_bytes(img_bytes: bytes) -> str:
-    """Run pytesseract OCR on raw image bytes."""
+# ── Google Document AI (primary OCR per spec §2.4) ────────
+
+def _google_document_ai_ocr(file_bytes: bytes, mime_type: str) -> str:
+    """
+    Process a document using Google Document AI (spec §2.4).
+    Requires: GOOGLE_DOCUMENT_AI_PROCESSOR_ID, GOOGLE_CLOUD_PROJECT env vars.
+    Uses EU region per spec §2.3 (europe-west3).
+    """
+    from google.cloud import documentai_v1 as documentai
+    from google.api_core.client_options import ClientOptions
+
+    opts = ClientOptions(api_endpoint=f"{_GOOGLE_LOCATION}-documentai.googleapis.com")
+    client = documentai.DocumentProcessorServiceClient(client_options=opts)
+
+    resource_name = client.processor_path(_GOOGLE_PROJECT_ID, _GOOGLE_LOCATION, _GOOGLE_PROCESSOR_ID)
+
+    raw_document = documentai.RawDocument(content=file_bytes, mime_type=mime_type)
+    request = documentai.ProcessRequest(name=resource_name, raw_document=raw_document)
+
+    result = client.process_document(request=request)
+    return result.document.text
+
+
+# ── Pytesseract (fallback OCR) ────────────────────────────
+
+def _ocr_tesseract(img_bytes: bytes) -> str:
+    """Run pytesseract OCR on raw image bytes (fallback for when Google Document AI is unavailable)."""
     try:
         from PIL import Image
         import pytesseract

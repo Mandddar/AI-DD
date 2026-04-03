@@ -79,6 +79,9 @@ class RequestListItem(Base):
     status = Column(SAEnum(RequestItemStatus), nullable=False, default=RequestItemStatus.open)
     priority = Column(SAEnum(RequestItemPriority), nullable=False, default=RequestItemPriority.medium)
 
+    # Task assignment — which team member is responsible
+    assigned_to = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
                         onupdate=lambda: datetime.now(timezone.utc), nullable=False)

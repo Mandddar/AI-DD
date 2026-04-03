@@ -22,10 +22,11 @@ class DialogAnswer(BaseModel):
 
 
 class RequestItemUpdate(BaseModel):
-    """Update status/priority of a request list item."""
+    """Update status/priority/assignment of a request list item."""
     status: Optional[str] = None
     priority: Optional[str] = None
     answer_document: Optional[str] = None
+    assigned_to: Optional[UUID] = None
 
 
 class AuditPlanOut(BaseModel):
@@ -51,5 +52,6 @@ class RequestItemOut(BaseModel):
     answer_document: Optional[str] = None
     status: str
     priority: str
+    assigned_to: Optional[UUID] = None
 
     model_config = {"from_attributes": True}

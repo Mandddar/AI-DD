@@ -18,6 +18,15 @@ export interface Document {
   page_count: string | null;
   version_number: number;
   parent_doc_id: string | null;
+  folder_id: string | null;
+  created_at: string;
+}
+
+export interface Folder {
+  id: string;
+  project_id: string;
+  parent_id: string | null;
+  name: string;
   created_at: string;
 }
 
@@ -92,4 +101,24 @@ export const documentsApi = {
   // Full-text search
   search: (projectId: string, query: string) =>
     api.get<SearchResult[]>(`/projects/${projectId}/documents/search/fulltext`, { params: { q: query } }).then((r) => r.data),
+
+  // Folders
+  listFolders: (projectId: string, parentId?: string) =>
+    api.get<Folder[]>(`/projects/${projectId}/documents/folders`, { params: parentId ? { parent_id: parentId } : {} }).then((r) => r.data),
+
+  createFolder: (projectId: string, name: string, parentId?: string) =>
+    api.post<Folder>(`/projects/${projectId}/documents/folders`, { name, parent_id: parentId || null }).then((r) => r.data),
+
+  deleteFolder: (projectId: string, folderId: string) =>
+    api.delete(`/projects/${projectId}/documents/folders/${folderId}`),
+
+  initFolders: (projectId: string) =>
+    api.post(`/projects/${projectId}/documents/init-folders`).then((r) => r.data),
+
+  // Bulk operations
+  bulkDelete: (projectId: string, documentIds: string[]) =>
+    api.post(`/projects/${projectId}/documents/bulk/delete`, { document_ids: documentIds }).then((r) => r.data),
+
+  bulkUpdateStatus: (projectId: string, documentIds: string[], status: DocumentStatus) =>
+    api.post(`/projects/${projectId}/documents/bulk/status`, { document_ids: documentIds, status }).then((r) => r.data),
 };

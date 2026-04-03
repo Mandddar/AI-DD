@@ -42,12 +42,25 @@ VALID_STATUS_TRANSITIONS = {
 }
 
 
+class Folder(Base):
+    """Folder structure for organizing documents per deal/workstream (spec §6.1)."""
+    __tablename__ = "folders"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False, index=True)
+    parent_id = Column(UUID(as_uuid=True), ForeignKey("folders.id"), nullable=True)
+    name = Column(String(255), nullable=False)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
 class Document(Base):
     __tablename__ = "documents"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False, index=True)
     uploaded_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    folder_id = Column(UUID(as_uuid=True), ForeignKey("folders.id"), nullable=True)
 
     name = Column(String(255), nullable=False)
     original_filename = Column(String(255), nullable=False)

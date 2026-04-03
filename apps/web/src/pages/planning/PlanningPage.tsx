@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { planning, type BasicDataInput, type RequestItem } from '../../api/planning';
+import { planning, type BasicDataInput, type RequestItem, type TeamMember } from '../../api/planning';
 import { usePermissions } from '../../hooks/usePermissions';
 import {
   ClipboardList, Building2, AlertTriangle, MessageSquare,
@@ -33,6 +33,12 @@ export default function PlanningPage() {
   const { data: requestItems } = useQuery({
     queryKey: ['requestList', projectId],
     queryFn: () => planning.getRequestList(projectId!),
+    enabled: plan?.current_phase === 'request_list',
+  });
+
+  const { data: teamMembers } = useQuery({
+    queryKey: ['team-members', projectId],
+    queryFn: () => planning.getTeamMembers(projectId!),
     enabled: plan?.current_phase === 'request_list',
   });
 
@@ -286,6 +292,7 @@ export default function PlanningPage() {
                     <th className="p-3 text-secondary font-medium">Workstream</th>
                     <th className="p-3 text-secondary font-medium">Audit Field</th>
                     <th className="p-3 text-secondary font-medium">Question</th>
+                    <th className="p-3 text-secondary font-medium">Assigned To</th>
                     <th className="p-3 text-secondary font-medium">Status</th>
                     <th className="p-3 text-secondary font-medium">Priority</th>
                   </tr>
@@ -297,6 +304,16 @@ export default function PlanningPage() {
                       <td className="p-3 text-primary">{item.workstream}</td>
                       <td className="p-3 text-primary">{item.audit_field}</td>
                       <td className="p-3 text-primary max-w-xs truncate">{item.question}</td>
+                      <td className="p-3">
+                        <select className="input text-xs py-1 px-2" value={item.assigned_to || ''}
+                          disabled={!perms.canManagePlanning}
+                          onChange={e => updateItem.mutate({ itemId: item.id, data: { assigned_to: e.target.value || null } as any })}>
+                          <option value="">Unassigned</option>
+                          {teamMembers?.map(m => (
+                            <option key={m.id} value={m.id}>{m.name || m.email}</option>
+                          ))}
+                        </select>
+                      </td>
                       <td className="p-3">
                         <select className="input text-xs py-1 px-2" value={item.status}
                           disabled={!perms.canUpdateRequestList}

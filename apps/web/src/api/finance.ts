@@ -30,6 +30,29 @@ export interface VarianceAnalysis {
   created_at: string;
 }
 
+export interface FinancialKPI {
+  name: string;
+  value: number;
+  unit: string;
+  category: string;
+}
+
+export interface PeriodEntry {
+  period: string;
+  value: number;
+  change_pct?: number;
+}
+
+export interface PeriodComparison {
+  metric: string;
+  periods: PeriodEntry[];
+}
+
+export interface ChartData {
+  variance: { name: string; current: number; prior: number; variance_pct: number; flag: string }[];
+  trends: PeriodComparison[];
+}
+
 export const finance = {
   uploadData: (projectId: string, file: File) => {
     const form = new FormData();
@@ -50,4 +73,13 @@ export const finance = {
 
   runVarianceAnalysis: (projectId: string, type: string = 'internal_historical') =>
     api.post<VarianceAnalysis>(`/projects/${projectId}/finance/variance/run?analysis_type=${type}`).then(r => r.data),
+
+  getKPIs: (projectId: string) =>
+    api.get<FinancialKPI[]>(`/projects/${projectId}/finance/kpis`).then(r => r.data),
+
+  getPeriodComparison: (projectId: string) =>
+    api.get<PeriodComparison[]>(`/projects/${projectId}/finance/period-comparison`).then(r => r.data),
+
+  getChartData: (projectId: string) =>
+    api.get<ChartData>(`/projects/${projectId}/finance/chart-data`).then(r => r.data),
 };

@@ -34,6 +34,7 @@ dependencies = [
     # ── OCR Module ──────────────────────────────────────────────
     "pytesseract>=0.3.10",
     "Pillow>=10.4.0",
+    "google-cloud-documentai>=2.29.0",
 
     # ── Agent Module (LLM + async queue) ────────────────────────
     "groq>=0.9.0",

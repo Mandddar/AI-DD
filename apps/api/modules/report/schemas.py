@@ -6,6 +6,7 @@ from datetime import datetime
 
 class ReportCreate(BaseModel):
     report_type: str        # detailed_workstream, executive_summary, consolidated
+    report_format: str = "docx"  # docx or xlsx
     workstream: Optional[str] = None  # For detailed: legal, tax, finance
     title: str
 

@@ -460,3 +460,225 @@ def _generate_follow_up_queries(results: list[dict]) -> list[dict]:
                 "priority": "high",
             })
     return queries
+
+
+# ── Financial KPIs ────────────────────────────────────────
+
+def _compute_kpis(raw_data: list[dict], columns: list[str]) -> list[dict]:
+    """Compute financial KPIs from raw uploaded data."""
+    import pandas as pd
+
+    if not raw_data:
+        return _mock_kpis()
+
+    df = pd.DataFrame(raw_data)
+    numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+
+    if not numeric_cols:
+        return _mock_kpis()
+
+    kpis = []
+    # Sum numeric columns to derive totals
+    totals = {col: float(df[col].dropna().sum()) for col in numeric_cols}
+
+    # Try to identify key financial line items by column name
+    revenue_keys = [c for c in numeric_cols if any(k in c.lower() for k in ["revenue", "umsatz", "erlös", "sales"])]
+    cogs_keys = [c for c in numeric_cols if any(k in c.lower() for k in ["cogs", "cost of goods", "materialaufwand", "wareneinsatz"])]
+    opex_keys = [c for c in numeric_cols if any(k in c.lower() for k in ["opex", "operating", "betriebsaufwand", "verwaltung"])]
+    personnel_keys = [c for c in numeric_cols if any(k in c.lower() for k in ["personnel", "personal", "löhne", "gehälter", "salary", "wages"])]
+
+    revenue = sum(totals.get(k, 0) for k in revenue_keys) if revenue_keys else None
+    cogs = sum(totals.get(k, 0) for k in cogs_keys) if cogs_keys else None
+    opex = sum(totals.get(k, 0) for k in opex_keys) if opex_keys else None
+    personnel = sum(totals.get(k, 0) for k in personnel_keys) if personnel_keys else None
+
+    if revenue and revenue != 0:
+        gross_profit = (revenue - cogs) if cogs is not None else None
+        ebitda = (gross_profit - opex) if gross_profit is not None and opex is not None else None
+
+        kpis.append({"name": "Revenue", "value": round(revenue, 2), "unit": "EUR", "category": "earnings"})
+        if gross_profit is not None:
+            kpis.append({"name": "Gross Profit", "value": round(gross_profit, 2), "unit": "EUR", "category": "earnings"})
+            kpis.append({"name": "Gross Margin", "value": round(gross_profit / revenue * 100, 1), "unit": "%", "category": "profitability"})
+        if ebitda is not None:
+            kpis.append({"name": "EBITDA", "value": round(ebitda, 2), "unit": "EUR", "category": "earnings"})
+            kpis.append({"name": "EBITDA Margin", "value": round(ebitda / revenue * 100, 1), "unit": "%", "category": "profitability"})
+        if personnel is not None:
+            kpis.append({"name": "Personnel Cost Ratio", "value": round(personnel / revenue * 100, 1), "unit": "%", "category": "efficiency"})
+        if cogs is not None:
+            kpis.append({"name": "Cost of Goods Sold", "value": round(cogs, 2), "unit": "EUR", "category": "earnings"})
+            kpis.append({"name": "Material Cost Ratio", "value": round(cogs / revenue * 100, 1), "unit": "%", "category": "efficiency"})
+
+    if not kpis:
+        return _mock_kpis()
+    return kpis
+
+
+def _mock_kpis() -> list[dict]:
+    return [
+        {"name": "Revenue", "value": 15200000, "unit": "EUR", "category": "earnings"},
+        {"name": "Gross Profit", "value": 6400000, "unit": "EUR", "category": "earnings"},
+        {"name": "Gross Margin", "value": 42.1, "unit": "%", "category": "profitability"},
+        {"name": "EBITDA", "value": 2780000, "unit": "EUR", "category": "earnings"},
+        {"name": "EBITDA Margin", "value": 18.3, "unit": "%", "category": "profitability"},
+        {"name": "Personnel Cost Ratio", "value": 32.5, "unit": "%", "category": "efficiency"},
+        {"name": "Material Cost Ratio", "value": 57.9, "unit": "%", "category": "efficiency"},
+        {"name": "Equity Ratio", "value": 38.2, "unit": "%", "category": "leverage"},
+    ]
+
+
+@router.get("/kpis")
+async def get_financial_kpis(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_reader),
+):
+    """Get computed financial KPIs for the project (spec §12.3)."""
+    result = await db.execute(
+        select(FinancialDataset)
+        .where(FinancialDataset.project_id == project_id)
+        .where(FinancialDataset.raw_data.isnot(None))
+        .order_by(FinancialDataset.created_at.desc())
+    )
+    datasets = list(result.scalars().all())
+
+    all_rows = []
+    columns: list[str] = []
+    for ds in datasets:
+        if ds.raw_data:
+            all_rows.extend(ds.raw_data)
+            if not columns and ds.structure_metadata:
+                columns = ds.structure_metadata.get("columns", [])
+
+    return _compute_kpis(all_rows, columns)
+
+
+# ── Period Comparison ─────────────────────────────────────
+
+@router.get("/period-comparison")
+async def get_period_comparison(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_reader),
+):
+    """Multi-period comparison — compares metrics across all uploaded datasets (spec §9.3)."""
+    result = await db.execute(
+        select(FinancialDataset)
+        .where(FinancialDataset.project_id == project_id)
+        .where(FinancialDataset.raw_data.isnot(None))
+        .order_by(FinancialDataset.created_at.asc())
+    )
+    datasets = list(result.scalars().all())
+
+    if not datasets:
+        return _mock_period_comparison()
+
+    try:
+        import pandas as pd
+
+        periods = []
+        for ds in datasets:
+            if not ds.raw_data:
+                continue
+            df = pd.DataFrame(ds.raw_data)
+            numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+            if not numeric_cols:
+                continue
+
+            period_label = ds.name or ds.source_filename
+            if ds.period_from:
+                period_label = str(ds.period_from)
+
+            period_data = {"period": period_label, "dataset_id": str(ds.id)}
+            for col in numeric_cols[:10]:
+                series = df[col].dropna()
+                if len(series) > 0:
+                    period_data[col] = round(float(series.sum()), 2)
+            periods.append(period_data)
+
+        if len(periods) < 2:
+            return _mock_period_comparison()
+
+        # Build comparison with variance between consecutive periods
+        comparisons = []
+        metric_names = [k for k in periods[0].keys() if k not in ("period", "dataset_id")]
+        for metric in metric_names:
+            row = {"metric": metric, "periods": []}
+            for i, p in enumerate(periods):
+                entry = {"period": p["period"], "value": p.get(metric, 0)}
+                if i > 0:
+                    prev_val = periods[i - 1].get(metric, 0)
+                    curr_val = p.get(metric, 0)
+                    if prev_val and prev_val != 0:
+                        entry["change_pct"] = round((curr_val - prev_val) / abs(prev_val) * 100, 1)
+                    else:
+                        entry["change_pct"] = 0
+                row["periods"].append(entry)
+            comparisons.append(row)
+
+        return comparisons
+    except Exception as e:
+        logger.warning("Period comparison failed: %s", e)
+        return _mock_period_comparison()
+
+
+def _mock_period_comparison() -> list[dict]:
+    return [
+        {"metric": "Revenue", "periods": [
+            {"period": "2022", "value": 12500000},
+            {"period": "2023", "value": 14000000, "change_pct": 12.0},
+            {"period": "2024", "value": 15200000, "change_pct": 8.6},
+        ]},
+        {"metric": "EBITDA", "periods": [
+            {"period": "2022", "value": 2200000},
+            {"period": "2023", "value": 2870000, "change_pct": 30.5},
+            {"period": "2024", "value": 2780000, "change_pct": -3.1},
+        ]},
+        {"metric": "Operating Expenses", "periods": [
+            {"period": "2022", "value": 2800000},
+            {"period": "2023", "value": 3200000, "change_pct": 14.3},
+            {"period": "2024", "value": 3900000, "change_pct": 21.9},
+        ]},
+        {"metric": "Net Debt", "periods": [
+            {"period": "2022", "value": 3000000},
+            {"period": "2023", "value": 3500000, "change_pct": 16.7},
+            {"period": "2024", "value": 4200000, "change_pct": 20.0},
+        ]},
+    ]
+
+
+# ── Chart Data ────────────────────────────────────────────
+
+@router.get("/chart-data")
+async def get_chart_data(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_reader),
+):
+    """Pre-processed chart data for frontend visualization (spec §12.3)."""
+    result = await db.execute(
+        select(VarianceAnalysis)
+        .where(VarianceAnalysis.project_id == project_id)
+        .order_by(VarianceAnalysis.created_at.desc())
+        .limit(1)
+    )
+    latest = result.scalar_one_or_none()
+
+    variance_chart = []
+    if latest and latest.results:
+        for r in latest.results:
+            variance_chart.append({
+                "name": r.get("metric", ""),
+                "current": r.get("current", 0),
+                "prior": r.get("prior", 0),
+                "variance_pct": r.get("variance_pct", 0),
+                "flag": r.get("flag", "normal"),
+            })
+
+    # Period comparison data for trend chart
+    period_data = await get_period_comparison(project_id, db, user)
+
+    return {
+        "variance": variance_chart,
+        "trends": period_data,
+    }

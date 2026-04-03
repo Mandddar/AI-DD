@@ -6,8 +6,9 @@ import {
   CheckCircle, Loader2, AlertCircle, Clock, Download,
   Search, Tag, GitBranch, ChevronDown, ChevronUp,
   Eye, ShieldCheck, XCircle, Archive,
+  FolderOpen, FolderPlus, ChevronRight, CheckSquare, Square,
 } from "lucide-react";
-import { documentsApi, type Document, type DocumentTag, type SearchResult, type Workstream, type DocumentStatus } from "../../api/documents";
+import { documentsApi, type Document, type DocumentTag, type SearchResult, type Workstream, type DocumentStatus, type Folder } from "../../api/documents";
 import { cn } from "../../lib/utils";
 import { usePermissions } from "../../hooks/usePermissions";
 
@@ -180,6 +181,10 @@ export function DocumentsPage() {
   const [uploading, setUploading] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
+  const [currentFolderId, setCurrentFolderId] = useState<string | undefined>(undefined);
+  const [folderPath, setFolderPath] = useState<{ id?: string; name: string }[]>([{ name: "Root" }]);
+  const [newFolderName, setNewFolderName] = useState("");
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ["documents", projectId],
@@ -197,9 +202,34 @@ export function DocumentsPage() {
     staleTime: 10_000,
   });
 
+  const { data: folders = [] } = useQuery({
+    queryKey: ["folders", projectId, currentFolderId],
+    queryFn: () => documentsApi.listFolders(projectId!, currentFolderId),
+  });
+
+  const createFolderMutation = useMutation({
+    mutationFn: (name: string) => documentsApi.createFolder(projectId!, name, currentFolderId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["folders", projectId] }); setNewFolderName(""); },
+  });
+
+  const initFoldersMutation = useMutation({
+    mutationFn: () => documentsApi.initFolders(projectId!),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["folders", projectId] }),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => documentsApi.delete(projectId!, id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["documents", projectId] }),
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: () => documentsApi.bulkDelete(projectId!, Array.from(selectedDocs)),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["documents", projectId] }); setSelectedDocs(new Set()); },
+  });
+
+  const bulkStatusMutation = useMutation({
+    mutationFn: (status: DocumentStatus) => documentsApi.bulkUpdateStatus(projectId!, Array.from(selectedDocs), status),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["documents", projectId] }); setSelectedDocs(new Set()); },
   });
 
   const statusMutation = useMutation({
@@ -218,6 +248,33 @@ export function DocumentsPage() {
         setUploading((prev) => prev.filter((n) => n !== file.name));
       }
     }
+  };
+
+  const toggleSelect = (docId: string) => {
+    setSelectedDocs((prev) => {
+      const next = new Set(prev);
+      if (next.has(docId)) next.delete(docId);
+      else next.add(docId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedDocs.size === documents.length) setSelectedDocs(new Set());
+    else setSelectedDocs(new Set(documents.map((d) => d.id)));
+  };
+
+  const navigateToFolder = (folderId: string, folderName: string) => {
+    setCurrentFolderId(folderId);
+    setFolderPath((prev) => [...prev, { id: folderId, name: folderName }]);
+    setSelectedDocs(new Set());
+  };
+
+  const navigateUp = (index: number) => {
+    const entry = folderPath[index];
+    setCurrentFolderId(entry.id);
+    setFolderPath((prev) => prev.slice(0, index + 1));
+    setSelectedDocs(new Set());
   };
 
   // Determine available next statuses for a document
@@ -313,6 +370,68 @@ export function DocumentsPage() {
         </div>
       )}
 
+      {/* Folder Navigation */}
+      <div className="card p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1 text-sm">
+            {folderPath.map((entry, i) => (
+              <span key={i} className="flex items-center gap-1">
+                {i > 0 && <ChevronRight size={12} className="text-text-muted" />}
+                <button onClick={() => navigateUp(i)}
+                  className={cn("hover:text-gold transition-colors", i === folderPath.length - 1 ? "text-text-primary font-medium" : "text-text-secondary")}>
+                  {entry.name}
+                </button>
+              </span>
+            ))}
+          </div>
+          {perms.canDeleteDocuments && (
+            <div className="flex items-center gap-2">
+              {folders.length === 0 && !currentFolderId && (
+                <button onClick={() => initFoldersMutation.mutate()}
+                  className="btn-ghost text-xs px-3 py-1.5 flex items-center gap-1" disabled={initFoldersMutation.isPending}>
+                  <FolderPlus size={12} /> Init Default Folders
+                </button>
+              )}
+              <div className="flex items-center gap-1">
+                <input className="input text-xs py-1 px-2 w-32" placeholder="New folder..." value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && newFolderName.trim()) createFolderMutation.mutate(newFolderName.trim()); }}
+                />
+                <button onClick={() => newFolderName.trim() && createFolderMutation.mutate(newFolderName.trim())}
+                  className="btn-ghost text-xs px-2 py-1" disabled={!newFolderName.trim()}>
+                  <FolderPlus size={14} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+        {folders.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {folders.map((f) => (
+              <button key={f.id} onClick={() => navigateToFolder(f.id, f.name)}
+                className="flex items-center gap-1.5 rounded-lg border border-canvas-border bg-surface px-3 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors">
+                <FolderOpen size={14} className="text-gold" /> {f.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Bulk Operations Toolbar */}
+      {selectedDocs.size > 0 && perms.canDeleteDocuments && (
+        <div className="card px-4 py-3 flex items-center gap-4 bg-gold/5 border-gold/30">
+          <span className="text-sm text-gold font-medium">{selectedDocs.size} selected</span>
+          <button onClick={() => bulkStatusMutation.mutate("under_review")}
+            className="btn-ghost text-xs px-3 py-1.5">Mark Under Review</button>
+          <button onClick={() => bulkStatusMutation.mutate("approved")}
+            className="btn-ghost text-xs px-3 py-1.5">Approve</button>
+          <button onClick={() => { if (confirm(`Delete ${selectedDocs.size} documents?`)) bulkDeleteMutation.mutate(); }}
+            className="btn-ghost text-xs px-3 py-1.5 text-risk-high">Delete Selected</button>
+          <button onClick={() => setSelectedDocs(new Set())}
+            className="btn-ghost text-xs px-3 py-1.5 ml-auto">Clear Selection</button>
+        </div>
+      )}
+
       {perms.isReadOnly && (
         <div className="rounded-lg border border-canvas-border bg-surface/50 px-4 py-2.5 text-sm text-text-secondary">
           Read-only access — you can view and download approved documents.
@@ -350,6 +469,11 @@ export function DocumentsPage() {
 
             return (
               <div key={doc.id} className="flex items-center gap-4 px-4 py-3 hover:bg-surface/30 transition-colors">
+                {perms.canDeleteDocuments && (
+                  <button onClick={() => toggleSelect(doc.id)} className="text-text-muted hover:text-gold shrink-0">
+                    {selectedDocs.has(doc.id) ? <CheckSquare size={16} className="text-gold" /> : <Square size={16} />}
+                  </button>
+                )}
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-surface">
                   {fileIcon(doc.mime_type)}
                 </div>

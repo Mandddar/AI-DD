@@ -18,6 +18,7 @@ class DocumentResponse(BaseModel):
     page_count: Optional[str]
     version_number: int
     parent_doc_id: Optional[UUID] = None
+    folder_id: Optional[UUID] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -58,3 +59,27 @@ class DocumentSearchResult(BaseModel):
     rank: float
 
     model_config = {"from_attributes": True}
+
+
+class FolderCreate(BaseModel):
+    name: str
+    parent_id: Optional[UUID] = None
+
+
+class FolderResponse(BaseModel):
+    id: UUID
+    project_id: UUID
+    parent_id: Optional[UUID] = None
+    name: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class BulkDeleteRequest(BaseModel):
+    document_ids: list[UUID]
+
+
+class BulkStatusUpdateRequest(BaseModel):
+    document_ids: list[UUID]
+    status: DocumentStatus

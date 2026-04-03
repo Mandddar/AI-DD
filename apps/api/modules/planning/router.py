@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
 from modules.auth.dependencies import project_manager, project_contributor, project_reader
 from modules.auth.models import User
+from modules.projects.models import ProjectMember
+from modules.auth.models import User as UserModel
 from .models import AuditPlan, RequestListItem, PlanningPhase
 from .schemas import BasicDataInput, DialogAnswer, RequestItemUpdate, AuditPlanOut, RequestItemOut
 from .service import generate_risk_analysis, generate_dialog_questions, generate_audit_plan, generate_request_list_items
@@ -190,7 +192,29 @@ async def update_request_item(
         item.priority = update.priority
     if update.answer_document is not None:
         item.answer_document = update.answer_document
+    if update.assigned_to is not None:
+        item.assigned_to = update.assigned_to
 
     await db.commit()
     await db.refresh(item)
     return item
+
+
+@router.get("/team-members")
+async def get_team_members(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_reader),
+):
+    """Get team members for task assignment dropdown."""
+    result = await db.execute(
+        select(UserModel.id, UserModel.full_name, UserModel.email, UserModel.role)
+        .join(ProjectMember, ProjectMember.user_id == UserModel.id)
+        .where(ProjectMember.project_id == project_id)
+        .order_by(UserModel.full_name)
+    )
+    members = result.all()
+    return [
+        {"id": str(m.id), "name": m.full_name, "email": m.email, "role": m.role.value if m.role else None}
+        for m in members
+    ]

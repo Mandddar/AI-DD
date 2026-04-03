@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
 from modules.auth.dependencies import project_manager, project_contributor, project_reader
 from modules.auth.models import User, UserRole
-from .models import Report, ReportType
+from .models import Report, ReportType, ReportFormat
 from .schemas import ReportCreate, ReportContentUpdate, ReportOut
 
 router = APIRouter(prefix="/projects/{project_id}/reports", tags=["reports"])
@@ -36,6 +36,7 @@ async def generate_report(
         project_id=project_id,
         created_by=user.id,
         report_type=data.report_type,
+        report_format=data.report_format if data.report_format in ("docx", "xlsx") else "docx",
         workstream=data.workstream,
         title=data.title,
         content=content,
@@ -233,10 +234,13 @@ async def finalize_report(
     if not report or report.project_id != project_id:
         raise HTTPException(status_code=404, detail="Report not found")
 
-    # Generate .docx file
+    # Generate file in requested format
     from datetime import datetime, timezone
-    docx_path = _generate_docx(report)
-    report.storage_path = docx_path
+    if report.report_format == ReportFormat.xlsx:
+        file_path = _generate_xlsx(report)
+    else:
+        file_path = _generate_docx(report)
+    report.storage_path = file_path
     report.is_finalized = True
     report.finalized_by = user.id
     report.finalized_at = datetime.now(timezone.utc)
@@ -266,6 +270,14 @@ async def download_report(
         raise HTTPException(status_code=404, detail="Report file not found on disk")
 
     safe_title = "".join(c if c.isalnum() or c in " -_" else "_" for c in report.title)
+
+    if report.report_format == ReportFormat.xlsx:
+        return FileResponse(
+            path=report.storage_path,
+            filename=f"{safe_title}.xlsx",
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
     return FileResponse(
         path=report.storage_path,
         filename=f"{safe_title}.docx",
@@ -338,4 +350,100 @@ def _generate_docx(report) -> str:
     uploads_dir.mkdir(parents=True, exist_ok=True)
     filepath = uploads_dir / f"{uuid.uuid4()}.docx"
     doc.save(str(filepath))
+    return str(filepath)
+
+
+def _generate_xlsx(report) -> str:
+    """Generate an Excel .xlsx file from report content (spec §12.2)."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from pathlib import Path
+    import uuid
+
+    wb = Workbook()
+
+    # Remove default sheet
+    wb.remove(wb.active)
+
+    content = report.edited_content or report.content or {}
+
+    # Styles
+    header_font = Font(bold=True, size=12, color="FFFFFF")
+    header_fill = PatternFill(start_color="1a1a2e", end_color="1a1a2e", fill_type="solid")
+    gold_font = Font(bold=True, size=11, color="C9A84C")
+    thin_border = Border(
+        bottom=Side(style="thin", color="CCCCCC"),
+    )
+
+    if isinstance(content, dict):
+        # Group sections — create one sheet per major section or workstream
+        section_items = list(content.items())
+
+        # If findings are grouped by workstream, create per-workstream sheets
+        # Otherwise create a single "Report" sheet
+        for section_title, section_body in section_items:
+            # Sanitize sheet name (max 31 chars, no special chars)
+            sheet_name = section_title[:31].replace("/", "-").replace("\\", "-").replace("*", "").replace("?", "").replace("[", "").replace("]", "")
+            if not sheet_name:
+                sheet_name = "Report"
+
+            ws = wb.create_sheet(title=sheet_name)
+
+            # Title row
+            ws.append([report.title])
+            ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=5)
+            ws.cell(1, 1).font = Font(bold=True, size=14, color="C9A84C")
+
+            # Section header
+            ws.append([section_title])
+            ws.cell(2, 1).font = gold_font
+            ws.append([])  # blank row
+
+            if isinstance(section_body, str):
+                ws.append([section_body])
+            elif isinstance(section_body, list):
+                # Findings list — create table
+                if section_body and isinstance(section_body[0], dict):
+                    keys = list(section_body[0].keys())
+                    # Header row
+                    row_num = ws.max_row + 1
+                    for col_idx, key in enumerate(keys, 1):
+                        cell = ws.cell(row=row_num, column=col_idx, value=key)
+                        cell.font = header_font
+                        cell.fill = header_fill
+                        cell.alignment = Alignment(horizontal="center")
+
+                    # Data rows
+                    for item in section_body:
+                        row_num = ws.max_row + 1
+                        for col_idx, key in enumerate(keys, 1):
+                            cell = ws.cell(row=row_num, column=col_idx, value=str(item.get(key, "")))
+                            cell.border = thin_border
+                else:
+                    for item in section_body:
+                        ws.append([str(item)])
+            elif isinstance(section_body, dict):
+                for k, v in section_body.items():
+                    ws.append([str(k), str(v)])
+            else:
+                ws.append([str(section_body)])
+
+            # Auto-width columns
+            for col in ws.columns:
+                max_len = 0
+                col_letter = col[0].column_letter
+                for cell in col:
+                    if cell.value:
+                        max_len = max(max_len, len(str(cell.value)))
+                ws.column_dimensions[col_letter].width = min(max_len + 4, 60)
+
+    if len(wb.sheetnames) == 0:
+        ws = wb.create_sheet("Report")
+        ws.append([str(content)])
+
+    # Save
+    uploads_dir = Path(__file__).parent.parent.parent / "uploads" / "reports"
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    filepath = uploads_dir / f"{uuid.uuid4()}.xlsx"
+    wb.save(str(filepath))
     return str(filepath)

@@ -16,6 +16,7 @@ export interface Report {
 
 export interface ReportCreate {
   report_type: string;
+  report_format?: string;  // 'docx' | 'xlsx'
   workstream?: string;
   title: string;
 }
