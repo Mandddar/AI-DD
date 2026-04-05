@@ -34,37 +34,37 @@ async def init_db():
 
 
 async def _seed_admin():
-    """Ensure the default admin user exists on every startup."""
+    """Ensure default admin users exist on startup."""
     from sqlalchemy import select
     from modules.auth.models import User, UserRole
     from core.security import hash_password
 
-    async with AsyncSessionLocal() as db:
-        result = await db.execute(select(User).where(User.email == "ayush@gmail.com"))
-        if result.scalar_one_or_none():
-            return  # already exists
-
-        db.add(User(
-            email="ayush@gmail.com",
-            hashed_password=hash_password("ayush@19"),
-            full_name="ayush chandekar",
-            role=UserRole.admin,
-            is_active=True,
-            disclaimer_accepted=True,
-        ))
-        await db.commit()
+    users = [
+        {
+            "email": "ayush@gmail.com",
+            "password": "ayush@19",
+            "full_name": "ayush chandekar",
+        },
+        {
+            "email": "aystar@gmail.com",
+            "password": "aystar@19",
+            "full_name": "aystar gaming",
+        },
+    ]
 
     async with AsyncSessionLocal() as db:
-        result = await db.execute(select(User).where(User.email == "aystar@gmail.com"))
-        if result.scalar_one_or_none():
-            return  # already exists
+        for u in users:
+            result = await db.execute(select(User).where(User.email == u["email"]))
+            if result.scalar_one_or_none():
+                continue  # don't return, just skip
 
-        db.add(User(
-            email="aytar@gmail.com",
-            hashed_password=hash_password("aystar@19"),
-            full_name="aystar gamming",
-            role=UserRole.admin,
-            is_active=True,
-            disclaimer_accepted=True,
-        ))
+            db.add(User(
+                email=u["email"],
+                hashed_password=hash_password(u["password"]),
+                full_name=u["full_name"],
+                role=UserRole.admin,
+                is_active=True,
+                disclaimer_accepted=True,
+            ))
+
         await db.commit()
