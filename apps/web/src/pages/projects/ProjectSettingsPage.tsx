@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Settings, UserPlus, Loader2, Users, Trash2 } from 'lucide-react';
+import { Settings, UserPlus, Loader2, Users } from 'lucide-react';
 import { api } from '../../api/client';
 import { projectsApi } from '../../api/projects';
 import { usePermissions } from '../../hooks/usePermissions';

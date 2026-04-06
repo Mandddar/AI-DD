@@ -4,11 +4,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Upload, FileText, FileSpreadsheet, File, Trash2,
   CheckCircle, Loader2, AlertCircle, Clock, Download,
-  Search, Tag, GitBranch, ChevronDown, ChevronUp,
+  Search, Tag, GitBranch,
   Eye, ShieldCheck, XCircle, Archive,
   FolderOpen, FolderPlus, ChevronRight, CheckSquare, Square,
 } from "lucide-react";
-import { documentsApi, type Document, type DocumentTag, type SearchResult, type Workstream, type DocumentStatus, type Folder } from "../../api/documents";
+import { documentsApi, type Document, type Workstream, type DocumentStatus } from "../../api/documents";
 import { cn } from "../../lib/utils";
 import { usePermissions } from "../../hooks/usePermissions";
 
@@ -260,10 +260,6 @@ export function DocumentsPage() {
     });
   };
 
-  const toggleSelectAll = () => {
-    if (selectedDocs.size === documents.length) setSelectedDocs(new Set());
-    else setSelectedDocs(new Set(documents.map((d) => d.id)));
-  };
 
   const navigateToFolder = (folderId: string, folderName: string) => {
     setCurrentFolderId(folderId);

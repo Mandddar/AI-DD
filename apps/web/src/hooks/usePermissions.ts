@@ -105,7 +105,6 @@ export function usePermissions(): Permissions {
   const isAdvisor = ADVISOR_ROLES.includes(role);
   const isContributor = CONTRIBUTOR_ROLES.includes(role);
   const isBuyer = role === "buyer";
-  const isSeller = role === "seller";
 
   return {
     role,

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { planning, type BasicDataInput, type RequestItem, type TeamMember } from '../../api/planning';
+import { planning, type BasicDataInput, type RequestItem } from '../../api/planning';
 import { usePermissions } from '../../hooks/usePermissions';
 import {
   ClipboardList, Building2, AlertTriangle, MessageSquare,

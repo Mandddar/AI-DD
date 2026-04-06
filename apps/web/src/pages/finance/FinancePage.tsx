@@ -258,7 +258,7 @@ export default function FinancePage() {
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: 8 }}
                     labelStyle={{ color: '#C9A84C' }}
-                    formatter={(value: number) => [fmtDE(value, 'EUR'), '']}
+                    formatter={(value) => [fmtDE(value as number, 'EUR'), '']}
                   />
                   <Legend />
                   <Bar dataKey="current" name="Current" fill="#C9A84C" radius={[4, 4, 0, 0]} />
@@ -285,7 +285,7 @@ export default function FinancePage() {
                   <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} tickFormatter={(v) => fmtCompact(v)} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: 8 }}
-                    formatter={(value: number) => [fmtDE(value, 'EUR'), '']}
+                    formatter={(value) => [fmtDE(value as number, 'EUR'), '']}
                   />
                   <Legend />
                   {chartData.trends.slice(0, 5).map((trend, idx) => (
