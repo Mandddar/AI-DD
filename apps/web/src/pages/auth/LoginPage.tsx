@@ -50,7 +50,7 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-screen bg-canvas">
-      {/* Left panel — branding (desktop) */}
+      {/* Left panel - branding (desktop) */}
       <div className="hidden lg:flex lg:w-[480px] xl:w-[520px] shrink-0 flex-col justify-between border-r border-canvas-border bg-canvas-subtle p-10 xl:p-12">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors text-sm">
@@ -87,7 +87,7 @@ export function LoginPage() {
         <p className="text-sm text-text-muted">© {new Date().getFullYear()} AI DD · M&A Due Diligence Platform</p>
       </div>
 
-      {/* Right panel — form */}
+      {/* Right panel - form */}
       <div className="flex flex-1 items-center justify-center px-4 sm:px-6 py-12">
         <div className="w-full max-w-md animate-fade-in">
           {/* Mobile header */}

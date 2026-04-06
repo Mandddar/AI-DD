@@ -204,7 +204,7 @@ export default function ReportsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* View button — always available */}
+                  {/* View button - always available */}
                   <button className="btn-ghost text-sm px-3 py-1.5 flex items-center gap-1"
                     onClick={() => setViewReport(report)}>
                     <Eye className="w-3 h-3" /> View
@@ -310,7 +310,7 @@ export default function ReportsPage() {
                                   {item.Description && (
                                     <p className="text-secondary text-sm mt-2 leading-relaxed">{item.Description}</p>
                                   )}
-                                  {item.Source && item.Source !== '—' && (
+                                  {item.Source && item.Source !== '-' && (
                                     <p className="text-secondary/50 text-sm mt-1 italic">Source: {item.Source}</p>
                                   )}
                                 </div>

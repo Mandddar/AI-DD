@@ -80,7 +80,7 @@ function DropZone({ onFiles }: { onFiles: (files: File[]) => void }) {
     >
       <Upload size={32} className={cn("mb-3", dragging ? "text-gold" : "text-text-muted")} />
       <p className="text-base font-medium text-text-primary">Drop files here or click to browse</p>
-      <p className="mt-1 text-sm text-text-muted">PDF, Word, Excel, CSV — up to 50 MB</p>
+      <p className="mt-1 text-sm text-text-muted">PDF, Word, Excel, CSV - up to 50 MB</p>
       <input
         ref={inputRef}
         type="file"
@@ -435,7 +435,7 @@ export function DocumentsPage() {
 
       {perms.isReadOnly && (
         <div className="rounded-lg border border-canvas-border bg-surface/50 px-4 py-2.5 text-base text-text-secondary">
-          Read-only access — you can view and download approved documents.
+          Read-only access - you can view and download approved documents.
         </div>
       )}
 

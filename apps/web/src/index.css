@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════
-   THEME VARIABLES — Light & Dark
+   THEME VARIABLES - Light & Dark
    All values are R G B channels (no commas) so
    Tailwind opacity modifiers like bg-gold/10 work.
    ═══════════════════════════════════════════════ */

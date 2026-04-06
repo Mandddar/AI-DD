@@ -1,6 +1,6 @@
 ═══════════════════════════════════════════════════════════════
                     MEDITECH GMBH
-              ANNUAL REPORT — FISCAL YEAR 2024
+              ANNUAL REPORT - FISCAL YEAR 2024
                      CONFIDENTIAL
 ═══════════════════════════════════════════════════════════════
 
@@ -112,7 +112,7 @@ Major customer contracts:  23 active framework agreements
 Major supplier contracts:  11 active procurement agreements
 
 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-ERROR 1 — CHANGE OF CONTROL CLAUSE
+ERROR 1 - CHANGE OF CONTROL CLAUSE
 Two (2) customer framework agreements (Klinikum Süd, value
 €1.8M/year; and BioVita AG, value €1.2M/year) contain change-of-
 control clauses requiring prior written consent of the customer
@@ -151,7 +151,7 @@ special attention. Tax loss carryforwards: none (profitable
 since FY2015).
 
 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-ERROR 2 — TRANSFER PRICING DOCUMENTATION GAP
+ERROR 2 - TRANSFER PRICING DOCUMENTATION GAP
 The company pays a management fee of €380,000 per year to its
 parent entity, MediTech Holding BV (Netherlands), for "group
 services." No transfer pricing documentation (Verrechnungs-

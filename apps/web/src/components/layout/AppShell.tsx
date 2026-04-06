@@ -17,7 +17,7 @@ export function AppShell() {
         />
       )}
 
-      {/* Sidebar — always visible on lg+, slide-in drawer on mobile */}
+      {/* Sidebar - always visible on lg+, slide-in drawer on mobile */}
       <div
         className={`
           fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0

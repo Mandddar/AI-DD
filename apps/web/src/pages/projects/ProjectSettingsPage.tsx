@@ -67,7 +67,7 @@ export default function ProjectSettingsPage() {
           </div>
           <div>
             <span className="text-text-muted">Industry</span>
-            <p className="text-text-primary font-medium">{project?.industry || '—'}</p>
+            <p className="text-text-primary font-medium">{project?.industry || '-'}</p>
           </div>
           <div>
             <span className="text-text-muted">Status</span>
@@ -75,7 +75,7 @@ export default function ProjectSettingsPage() {
           </div>
           <div>
             <span className="text-text-muted">Created</span>
-            <p className="text-text-primary font-medium">{project?.created_at ? new Date(project.created_at).toLocaleDateString() : '—'}</p>
+            <p className="text-text-primary font-medium">{project?.created_at ? new Date(project.created_at).toLocaleDateString() : '-'}</p>
           </div>
         </div>
       </div>

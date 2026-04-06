@@ -33,7 +33,7 @@ export function RegisterPage() {
             </div>
           </div>
           <h1 className="font-display text-2xl sm:text-3xl text-text-primary">Create account</h1>
-          <p className="mt-1 text-base text-text-muted">AI DD — M&A Due Diligence</p>
+          <p className="mt-1 text-base text-text-muted">AI DD - M&A Due Diligence</p>
           <div className="mt-3 flex justify-center">
             <ThemeToggle />
           </div>

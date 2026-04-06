@@ -89,7 +89,7 @@ function Hero() {
         </h1>
 
         <p className="mx-auto mt-4 sm:mt-6 max-w-2xl text-base sm:text-xl text-text-secondary leading-relaxed px-2">
-          AI DD automates the most labour-intensive parts of due diligence — document review, red-flag detection, and risk scoring — so your advisors focus on decisions, not reading.
+          AI DD automates the most labour-intensive parts of due diligence - document review, red-flag detection, and risk scoring - so your advisors focus on decisions, not reading.
         </p>
 
         {/* CTAs */}
@@ -123,8 +123,8 @@ function Hero() {
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 const MOCK_FINDINGS = [
-  { label: "Critical", text: "Change-of-control clause in 2 customer contracts — consent required before ownership transfer.", color: "text-risk-high bg-risk-high/10" },
-  { label: "High", text: "Transfer pricing documentation gap — management fee lacks arm's-length substantiation.", color: "text-risk-medium bg-risk-medium/10" },
+  { label: "Critical", text: "Change-of-control clause in 2 customer contracts - consent required before ownership transfer.", color: "text-risk-high bg-risk-high/10" },
+  { label: "High", text: "Transfer pricing documentation gap - management fee lacks arm's-length substantiation.", color: "text-risk-medium bg-risk-medium/10" },
   { label: "Medium", text: "IP assignment agreements missing for 3 freelance contractors engaged in FY2023.", color: "text-gold bg-gold/10" },
 ];
 
@@ -146,12 +146,12 @@ function UIPreview() {
             <div className="h-3 w-3 rounded-full bg-risk-high/60" />
             <div className="h-3 w-3 rounded-full bg-risk-medium/60" />
             <div className="h-3 w-3 rounded-full bg-risk-low/60" />
-            <span className="ml-3 text-xs sm:text-sm text-text-muted font-mono hidden sm:inline">AI DD — MediTech GmbH — Analysis Run #4</span>
+            <span className="ml-3 text-xs sm:text-sm text-text-muted font-mono hidden sm:inline">AI DD - MediTech GmbH - Analysis Run #4</span>
           </div>
 
           {/* Mobile: stack, Desktop: side by side */}
           <div className="grid grid-cols-1 md:grid-cols-3 md:divide-x divide-canvas-border">
-            {/* Sidebar mock — hidden on small screens */}
+            {/* Sidebar mock - hidden on small screens */}
             <div className="hidden md:block col-span-1 bg-canvas-subtle p-4 space-y-1">
               <p className="text-sm text-text-muted uppercase tracking-wider mb-3">Workstreams</p>
               {WORKSTREAMS.map((ws) => (
@@ -173,7 +173,7 @@ function UIPreview() {
             {/* Findings list mock */}
             <div className="md:col-span-2 divide-y divide-canvas-border">
               <div className="px-4 py-3 flex items-center justify-between">
-                <p className="text-base font-semibold text-text-primary">Findings — Legal</p>
+                <p className="text-base font-semibold text-text-primary">Findings - Legal</p>
                 <span className="text-sm text-text-muted">7 items</span>
               </div>
               {MOCK_FINDINGS.map(({ label, text, color }) => (
@@ -199,7 +199,7 @@ function UIPreview() {
 
 // ─── Features ─────────────────────────────────────────────────────────────────
 const FEATURES = [
-  { icon: Zap, title: "Instant document processing", body: "Upload PDFs, Word, and Excel files. Text extraction begins immediately — no manual copy-paste, no delays." },
+  { icon: Zap, title: "Instant document processing", body: "Upload PDFs, Word, and Excel files. Text extraction begins immediately - no manual copy-paste, no delays." },
   { icon: ShieldCheck, title: "AI red-flag detection", body: "Agents scan every document for change-of-control clauses, IP gaps, litigation risk, tax exposure, and more." },
   { icon: BarChart3, title: "Workstream risk scoring", body: "Legal, Tax, Finance, and General workstreams are scored independently so your team knows exactly where to focus." },
   { icon: FileSearch, title: "Reviewer workflow", body: "Approve or reject each finding. Every decision is logged. Full audit trail for your compliance team." },

@@ -5,7 +5,7 @@ import { cn } from "../lib/utils";
 type Variant = "compact" | "pills";
 
 /**
- * Theme toggle — reusable across sidebar, navbar, auth pages.
+ * Theme toggle - reusable across sidebar, navbar, auth pages.
  *
  * variant="compact"  → small icon-only row (sidebar / navbar)
  * variant="pills"    → labeled pill buttons (settings page)

@@ -173,7 +173,7 @@ export function AgentsPage() {
                 {run.status === "completed" && run.total_documents === 0 && (
                   <p className="mt-1 flex items-center gap-1 text-sm text-yellow-500">
                     <AlertTriangle size={13} />
-                    No documents were uploaded — findings are based on planning data only
+                    No documents were uploaded - findings are based on planning data only
                   </p>
                 )}
               </div>

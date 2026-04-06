@@ -5,17 +5,17 @@ import { finance } from '../../api/finance';
 import { usePermissions } from '../../hooks/usePermissions';
 import {
   TrendingUp, Upload, BarChart3, Loader2, FileSpreadsheet, AlertTriangle,
-  TrendingDown, ArrowUpRight, ArrowDownRight, Minus, Brain, FileText,
-  AlertCircle, CheckCircle, HelpCircle, Sparkles,
+  ArrowUpRight, ArrowDownRight, Minus, Brain, FileText,
+  AlertCircle, HelpCircle, Sparkles,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  LineChart, Line, CartesianGrid, Legend, Cell,
+  LineChart, Line, CartesianGrid, Legend,
 } from 'recharts';
 
 /** Format a number in German locale (1.234.567,89) */
 function fmtDE(value: number | null | undefined, unit?: string): string {
-  if (value == null) return '—';
+  if (value == null) return '-';
   const formatted = new Intl.NumberFormat('de-DE', {
     minimumFractionDigits: unit === '%' ? 1 : 0,
     maximumFractionDigits: unit === '%' ? 1 : 2,
@@ -191,7 +191,7 @@ export default function FinancePage() {
       {kpis && kpis.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {kpis.map((kpi) => (
-            <div key={kpi.name + (kpi as any).period} className="card p-5">
+            <div key={kpi.name + (kpi.period ?? '')} className="card p-5">
               <p className="text-sm text-secondary font-medium uppercase tracking-wide">{kpi.name}</p>
               <p className="text-2xl font-display font-bold text-primary mt-1">
                 {fmtDE(kpi.value, kpi.unit)}
@@ -203,8 +203,8 @@ export default function FinancePage() {
                   kpi.category === 'leverage' ? 'bg-orange-500/10 text-orange-400' :
                   'bg-gold/10 text-gold'
                 }`}>{kpi.category}</span>
-                {(kpi as any).period && (
-                  <span className="text-xs text-secondary">{(kpi as any).period}</span>
+                {kpi.period && (
+                  <span className="text-xs text-secondary">{kpi.period}</span>
                 )}
               </div>
             </div>
@@ -239,7 +239,7 @@ export default function FinancePage() {
       {/* Overview Tab - Charts */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
-          {/* Variance Bar Chart — from saved analysis or AI insight */}
+          {/* Variance Bar Chart - from saved analysis or AI insight */}
           {(chartData?.variance?.length || latestInsight?.variance_results?.length) ? (
             <div className="card p-7">
               <h2 className="text-xl font-display font-semibold text-primary flex items-center gap-2 mb-4">
@@ -318,7 +318,7 @@ export default function FinancePage() {
                       <p className="text-primary font-medium text-base">{ds.name}</p>
                       <p className="text-secondary text-sm mt-1">
                         {ds.chart_of_accounts && `${ds.chart_of_accounts} · `}
-                        {ds.period_from && `${ds.period_from} — ${ds.period_to}`}
+                        {ds.period_from && `${ds.period_from} - ${ds.period_to}`}
                         {!ds.period_from && 'Period not detected'}
                       </p>
                     </div>
@@ -365,7 +365,7 @@ export default function FinancePage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {v.results.map((r: any, i: number) => (
+                        {v.results.map((r: { metric?: string; label?: string; current?: number; prior?: number; variance_pct?: number; flag?: string }, i: number) => (
                           <tr key={i} className="border-b border-canvas-border/30">
                             <td className="p-2 text-primary">{r.metric || r.label || `Item ${i+1}`}</td>
                             <td className="p-2 text-primary text-right">{fmtDE(r.current, 'EUR')}</td>
@@ -374,8 +374,8 @@ export default function FinancePage() {
                               <span className={`flex items-center justify-end gap-1 ${
                                 r.flag === 'significant' ? 'text-risk-high' : 'text-primary'
                               }`}>
-                                {r.variance_pct > 0 ? <ArrowUpRight className="w-3 h-3" /> :
-                                 r.variance_pct < 0 ? <ArrowDownRight className="w-3 h-3" /> :
+                                {(r.variance_pct ?? 0) > 0 ? <ArrowUpRight className="w-3 h-3" /> :
+                                 (r.variance_pct ?? 0) < 0 ? <ArrowDownRight className="w-3 h-3" /> :
                                  <Minus className="w-3 h-3" />}
                                 {fmtDE(r.variance_pct, '%')}
                               </span>
@@ -399,7 +399,7 @@ export default function FinancePage() {
                       <p className="text-gold text-xs font-medium mb-1 flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" /> AI-Generated Follow-up Queries
                       </p>
-                      {v.generated_queries.map((q: any, i: number) => (
+                      {v.generated_queries.map((q: string | { question?: string }, i: number) => (
                         <p key={i} className="text-secondary text-xs">• {typeof q === 'string' ? q : q.question || JSON.stringify(q)}</p>
                       ))}
                     </div>
@@ -510,7 +510,7 @@ export default function FinancePage() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-xs font-medium uppercase tracking-wide">{a.severity}</span>
-                              <span className="text-xs opacity-60">— {a.metric}</span>
+                              <span className="text-xs opacity-60">- {a.metric}</span>
                             </div>
                             <p className="text-base font-medium">{a.question}</p>
                             {a.detail && (

@@ -156,7 +156,7 @@ export function ProjectsPage() {
                 <div>
                   <p className="text-base font-semibold text-text-primary">{project.name}</p>
                   <p className="text-sm text-text-muted">
-                    {project.company_name} · {project.legal_form} · {project.industry ?? "—"} ·{" "}
+                    {project.company_name} · {project.legal_form} · {project.industry ?? "-"} ·{" "}
                     {project.deal_type.replace("_", " ")}
                   </p>
                 </div>

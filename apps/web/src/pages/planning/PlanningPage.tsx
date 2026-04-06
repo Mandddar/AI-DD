@@ -118,10 +118,10 @@ export default function PlanningPage() {
         </div>
       </div>
 
-      {/* No Plan Yet — Show Phase 1 Form (advisors only) or read-only message */}
+      {/* No Plan Yet - Show Phase 1 Form (advisors only) or read-only message */}
       {!plan && perms.canManagePlanning && (
         <div className="card p-7 space-y-6">
-          <h2 className="text-xl font-display font-semibold text-primary">Phase 1 — Basic Company Data</h2>
+          <h2 className="text-xl font-display font-semibold text-primary">Phase 1 - Basic Company Data</h2>
           <p className="text-secondary text-base">Enter the target company's basic information to begin the audit planning process.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -182,10 +182,10 @@ export default function PlanningPage() {
         </div>
       )}
 
-      {/* Phase 1 complete but stuck (legacy plans) — show advance button */}
+      {/* Phase 1 complete but stuck (legacy plans) - show advance button */}
       {plan?.current_phase === 'basic_data' && (
         <div className="card p-7 space-y-4">
-          <h2 className="text-xl font-display font-semibold text-primary">Phase 1 — Basic Data Submitted</h2>
+          <h2 className="text-xl font-display font-semibold text-primary">Phase 1 - Basic Data Submitted</h2>
           <p className="text-secondary text-base">Company data has been recorded. Advance to AI Risk Analysis.</p>
           {perms.canManagePlanning && (
             <button className="btn-primary px-6 py-2" onClick={() => advancePhase.mutate()}
@@ -196,10 +196,10 @@ export default function PlanningPage() {
         </div>
       )}
 
-      {/* Phase 2 — Risk Analysis */}
+      {/* Phase 2 - Risk Analysis */}
       {plan?.current_phase === 'risk_analysis' && (
         <div className="card p-7 space-y-4">
-          <h2 className="text-xl font-display font-semibold text-primary">Phase 2 — AI Risk Analysis</h2>
+          <h2 className="text-xl font-display font-semibold text-primary">Phase 2 - AI Risk Analysis</h2>
           <p className="text-secondary text-base">AI-derived risk areas based on company profile.</p>
           {plan.risk_analysis?.length ? (
             <div className="space-y-3">
@@ -229,17 +229,17 @@ export default function PlanningPage() {
         </div>
       )}
 
-      {/* Phase 3 — Interactive Dialog */}
+      {/* Phase 3 - Interactive Dialog */}
       {plan?.current_phase === 'dialog' && (
         <div className="card p-7 space-y-4">
-          <h2 className="text-xl font-display font-semibold text-primary">Phase 3 — Interactive Dialog</h2>
+          <h2 className="text-xl font-display font-semibold text-primary">Phase 3 - Interactive Dialog</h2>
           <p className="text-secondary text-base">AI asks targeted follow-up questions based on the risk analysis.</p>
           {plan.dialog_history?.length ? (
             <div className="space-y-3">
               {plan.dialog_history.map((item: any, i: number) => (
                 <div key={i} className="bg-surface p-4 rounded-lg border border-canvas-border">
                   <p className="text-gold text-base font-medium mb-1">Q: {item.question}</p>
-                  <p className="text-primary text-base">A: {item.answer || '—'}</p>
+                  <p className="text-primary text-base">A: {item.answer || '-'}</p>
                 </div>
               ))}
             </div>
@@ -255,10 +255,10 @@ export default function PlanningPage() {
         </div>
       )}
 
-      {/* Phase 4 — Audit Plan Approval */}
+      {/* Phase 4 - Audit Plan Approval */}
       {plan?.current_phase === 'plan_approval' && (
         <div className="card p-7 space-y-4">
-          <h2 className="text-xl font-display font-semibold text-primary">Phase 4 — Audit Plan Approval</h2>
+          <h2 className="text-xl font-display font-semibold text-primary">Phase 4 - Audit Plan Approval</h2>
           <p className="text-secondary text-base">Review the generated audit plan. Specialized agents will only begin work after your approval.</p>
           {plan.audit_plan_content ? (
             <pre className="bg-surface p-4 rounded-lg border border-canvas-border text-secondary text-base overflow-auto max-h-96">
@@ -278,10 +278,10 @@ export default function PlanningPage() {
         </div>
       )}
 
-      {/* Phase 5 — Request List */}
+      {/* Phase 5 - Request List */}
       {plan?.current_phase === 'request_list' && (
         <div className="card p-7 space-y-4">
-          <h2 className="text-xl font-display font-semibold text-primary">Phase 5 — Request List</h2>
+          <h2 className="text-xl font-display font-semibold text-primary">Phase 5 - Request List</h2>
           <p className="text-secondary text-base">Due diligence request list. Update status and priority as documents are received.</p>
           {requestItems?.length ? (
             <div className="overflow-x-auto">

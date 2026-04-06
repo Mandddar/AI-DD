@@ -13,7 +13,8 @@
       "Bash(find /m/programming/AI-DD/apps/api/modules -type f -name \"*.py\" -exec grep -l \"Workbook\\\\|from openpyxl import\" {} \\\\;)",
       "Bash(python -c ':*)",
       "Bash(python -c \"import ast; ast.parse\\(open\\('alembic/versions/002_add_folders_assignments.py'\\).read\\(\\)\\); print\\('OK'\\)\")",
-      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")"
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(npx eslint:*)"
     ]
   }
 }

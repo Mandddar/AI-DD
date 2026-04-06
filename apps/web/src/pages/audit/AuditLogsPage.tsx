@@ -148,7 +148,7 @@ export default function AuditLogsPage() {
       </div>
 
       <p className="text-sm text-secondary/40 italic">
-        Audit logs are tamper-proof — entries can never be edited or deleted, not even by the admin.
+        Audit logs are tamper-proof - entries can never be edited or deleted, not even by the admin.
       </p>
     </div>
   );

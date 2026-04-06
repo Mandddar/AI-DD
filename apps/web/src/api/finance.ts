@@ -35,6 +35,7 @@ export interface FinancialKPI {
   value: number;
   unit: string;
   category: string;
+  period?: string;
 }
 
 export interface PeriodEntry {
