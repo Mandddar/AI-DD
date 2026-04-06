@@ -14,7 +14,15 @@
       "Bash(python -c ':*)",
       "Bash(python -c \"import ast; ast.parse\\(open\\('alembic/versions/002_add_folders_assignments.py'\\).read\\(\\)\\); print\\('OK'\\)\")",
       "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(docker info:*)",
+      "Bash(docker buildx:*)",
+      "Bash(docker login:*)",
+      "Bash(docker build:*)",
+      "Bash(docker push:*)",
+      "Bash(python -c \"import secrets; print\\(secrets.token_hex\\(32\\)\\)\")",
+      "WebFetch(domain:aidd-api.onrender.com)",
+      "WebFetch(domain:aidd-kappa.vercel.app)"
     ]
   }
 }

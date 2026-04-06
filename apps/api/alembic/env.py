@@ -65,12 +65,14 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode — connects to DB and applies directly."""
+    # Use DATABASE_URL env var if set, otherwise fall back to alembic.ini
+    url = os.environ.get("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        # Use sync psycopg driver for Alembic CLI
-        url=config.get_main_option("sqlalchemy.url").replace("+psycopg", ""),
+        url=url,
     )
 
     with connectable.connect() as connection:
