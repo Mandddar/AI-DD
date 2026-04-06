@@ -42,17 +42,17 @@ export default function ProjectSettingsPage() {
   return (
     <div className="space-y-6 animate-fade-in max-w-3xl">
       <div className="flex items-center gap-3">
-        <Settings className="w-7 h-7 text-gold" />
+        <Settings className="w-8 h-8 text-gold" />
         <div>
-          <h1 className="text-2xl font-display font-bold text-text-primary">Deal Settings</h1>
-          <p className="text-sm text-text-secondary mt-0.5">{project?.name}</p>
+          <h1 className="text-3xl font-display font-bold text-text-primary">Deal Settings</h1>
+          <p className="text-base text-text-secondary mt-0.5">{project?.name}</p>
         </div>
       </div>
 
       {/* Deal Info */}
-      <div className="card p-6">
-        <h2 className="text-lg font-display font-semibold text-text-primary mb-4">Deal Information</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+      <div className="card p-7">
+        <h2 className="text-xl font-display font-semibold text-text-primary mb-4">Deal Information</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-base">
           <div>
             <span className="text-text-muted">Company</span>
             <p className="text-text-primary font-medium">{project?.company_name}</p>
@@ -82,12 +82,12 @@ export default function ProjectSettingsPage() {
 
       {/* Add Member */}
       {perms.canManageProject && (
-        <div className="card p-6 space-y-4">
+        <div className="card p-7 space-y-4">
           <div className="flex items-center gap-2 mb-2">
-            <Users className="w-5 h-5 text-gold" />
-            <h2 className="text-lg font-display font-semibold text-text-primary">Team Members</h2>
+            <Users className="w-6 h-6 text-gold" />
+            <h2 className="text-xl font-display font-semibold text-text-primary">Team Members</h2>
           </div>
-          <p className="text-text-secondary text-sm">
+          <p className="text-text-secondary text-base">
             Add users to this deal by their email address. They must have a registered account.
           </p>
           <div className="flex gap-3">
@@ -99,48 +99,48 @@ export default function ProjectSettingsPage() {
               onChange={e => { setEmail(e.target.value); setAddError(''); }}
             />
             <button
-              className="btn-primary px-4 py-2 flex items-center gap-2 text-sm"
+              className="btn-primary px-4 py-2 flex items-center gap-2 text-base"
               disabled={!email.trim() || addMember.isPending}
               onClick={() => addMember.mutate(email.trim())}
             >
-              <UserPlus size={14} />
+              <UserPlus size={16} />
               {addMember.isPending ? 'Adding...' : 'Add Member'}
             </button>
           </div>
           {addError && (
-            <p className="text-xs text-risk-high bg-risk-high/10 rounded px-3 py-2">{addError}</p>
+            <p className="text-sm text-risk-high bg-risk-high/10 rounded px-3 py-2">{addError}</p>
           )}
           {addMember.isSuccess && (
-            <p className="text-xs text-risk-low bg-risk-low/10 rounded px-3 py-2">Member added successfully.</p>
+            <p className="text-sm text-risk-low bg-risk-low/10 rounded px-3 py-2">Member added successfully.</p>
           )}
         </div>
       )}
 
       {/* Data Room Controls */}
       {perms.canManageProject && (
-        <div className="card p-6 space-y-4">
-          <h2 className="text-lg font-display font-semibold text-text-primary">Data Room Controls</h2>
+        <div className="card p-7 space-y-4">
+          <h2 className="text-xl font-display font-semibold text-text-primary">Data Room Controls</h2>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 rounded-lg bg-surface border border-canvas-border">
               <div>
-                <p className="text-sm text-text-primary font-medium">NDA Required</p>
-                <p className="text-xs text-text-muted">Users must accept NDA before accessing documents</p>
+                <p className="text-base text-text-primary font-medium">NDA Required</p>
+                <p className="text-sm text-text-muted">Users must accept NDA before accessing documents</p>
               </div>
-              <span className="text-xs text-risk-low font-medium bg-risk-low/10 px-2.5 py-1 rounded-full">Enabled</span>
+              <span className="text-sm text-risk-low font-medium bg-risk-low/10 px-2.5 py-1 rounded-full">Enabled</span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-surface border border-canvas-border">
               <div>
-                <p className="text-sm text-text-primary font-medium">Document Watermarking</p>
-                <p className="text-xs text-text-muted">Downloaded documents include user watermark</p>
+                <p className="text-base text-text-primary font-medium">Document Watermarking</p>
+                <p className="text-sm text-text-muted">Downloaded documents include user watermark</p>
               </div>
-              <span className="text-xs text-text-muted font-medium bg-surface px-2.5 py-1 rounded-full ring-1 ring-canvas-border">Coming Soon</span>
+              <span className="text-sm text-text-muted font-medium bg-surface px-2.5 py-1 rounded-full ring-1 ring-canvas-border">Coming Soon</span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-surface border border-canvas-border">
               <div>
-                <p className="text-sm text-text-primary font-medium">Access Expiry</p>
-                <p className="text-xs text-text-muted">Auto-revoke access after a set date</p>
+                <p className="text-base text-text-primary font-medium">Access Expiry</p>
+                <p className="text-sm text-text-muted">Auto-revoke access after a set date</p>
               </div>
-              <span className="text-xs text-text-muted font-medium bg-surface px-2.5 py-1 rounded-full ring-1 ring-canvas-border">Coming Soon</span>
+              <span className="text-sm text-text-muted font-medium bg-surface px-2.5 py-1 rounded-full ring-1 ring-canvas-border">Coming Soon</span>
             </div>
           </div>
         </div>

@@ -35,3 +35,7 @@ apps/api/uploads/
 
 # ignore the QA report
 QA_Report.pdf
+
+
+# ignore the QA report
+.claude/

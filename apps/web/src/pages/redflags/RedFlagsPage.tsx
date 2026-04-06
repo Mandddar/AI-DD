@@ -47,75 +47,75 @@ export default function RedFlagsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <AlertTriangle className="w-7 h-7 text-risk-high" />
+          <AlertTriangle className="w-8 h-8 text-risk-high" />
           <div>
-            <h1 className="text-2xl font-display font-bold text-text-primary">Red Flags</h1>
-            <p className="text-sm text-text-secondary mt-0.5">
+            <h1 className="text-3xl font-display font-bold text-text-primary">Red Flags</h1>
+            <p className="text-base text-text-secondary mt-0.5">
               Critical and high severity findings requiring immediate attention
             </p>
           </div>
         </div>
-        <span className="text-sm text-text-muted">
+        <span className="text-base text-text-muted">
           {redFlags.length} red flag{redFlags.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {!latestRun ? (
         <div className="card p-12 text-center">
-          <AlertTriangle className="w-16 h-16 text-text-muted/20 mx-auto mb-4" />
-          <h3 className="text-text-primary font-display text-lg mb-2">No Analysis Completed</h3>
-          <p className="text-text-secondary text-sm">Run AI analysis first to identify red flags.</p>
+          <AlertTriangle className="w-20 h-20 text-text-muted/20 mx-auto mb-4" />
+          <h3 className="text-text-primary font-display text-xl mb-2">No Analysis Completed</h3>
+          <p className="text-text-secondary text-base">Run AI analysis first to identify red flags.</p>
           <Link
             to={`/projects/${projectId}/analysis`}
-            className="mt-4 inline-flex items-center gap-1.5 text-xs text-gold hover:text-gold-light transition-colors font-medium"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm text-gold hover:text-gold-light transition-colors font-medium"
           >
-            Go to AI Analysis <ExternalLink size={12} />
+            Go to AI Analysis <ExternalLink size={14} />
           </Link>
         </div>
       ) : redFlags.length === 0 ? (
         <div className="card p-12 text-center">
-          <CheckCircle className="w-16 h-16 text-risk-low/30 mx-auto mb-4" />
-          <h3 className="text-text-primary font-display text-lg mb-2">No Red Flags</h3>
-          <p className="text-text-secondary text-sm">
+          <CheckCircle className="w-20 h-20 text-risk-low/30 mx-auto mb-4" />
+          <h3 className="text-text-primary font-display text-xl mb-2">No Red Flags</h3>
+          <p className="text-text-secondary text-base">
             No critical or high severity findings in the latest analysis run.
           </p>
         </div>
       ) : (
         <div className="space-y-3">
           {redFlags.map(finding => (
-            <div key={finding.id} className="card p-5">
+            <div key={finding.id} className="card p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-text-primary font-medium text-sm">{finding.title}</h3>
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
+                    <h3 className="text-text-primary font-medium text-base">{finding.title}</h3>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-sm font-medium ring-1 ${
                       finding.severity === 'critical'
                         ? 'bg-red-500/15 text-red-400 ring-red-500/30'
                         : 'bg-orange-500/15 text-orange-400 ring-orange-500/30'
                     }`}>
                       {finding.severity.toUpperCase()}
                     </span>
-                    <span className="text-xs text-text-muted px-2 py-0.5 rounded-full bg-surface capitalize">
+                    <span className="text-sm text-text-muted px-2 py-0.5 rounded-full bg-surface capitalize">
                       {finding.agent_type}
                     </span>
                     {finding.category && (
-                      <span className="text-xs text-text-muted px-2 py-0.5 rounded-full bg-surface">
+                      <span className="text-sm text-text-muted px-2 py-0.5 rounded-full bg-surface">
                         {finding.category}
                       </span>
                     )}
                   </div>
 
-                  <p className="text-text-secondary text-sm mt-2 leading-relaxed">
+                  <p className="text-text-secondary text-base mt-2 leading-relaxed">
                     {finding.description}
                   </p>
 
                   {finding.source_excerpts?.length > 0 && finding.source_excerpts[0] && (
-                    <p className="text-text-muted text-xs mt-2 italic border-l-2 border-canvas-border pl-3">
+                    <p className="text-text-muted text-sm mt-2 italic border-l-2 border-canvas-border pl-3">
                       {finding.source_excerpts[0]}
                     </p>
                   )}
 
-                  <div className="flex items-center gap-3 mt-3 text-xs text-text-muted">
+                  <div className="flex items-center gap-3 mt-3 text-sm text-text-muted">
                     <span>Status: <span className={`font-medium ${
                       finding.status === 'approved' ? 'text-risk-low' :
                       finding.status === 'rejected' ? 'text-risk-high' : 'text-gold'
@@ -129,18 +129,18 @@ export default function RedFlagsPage() {
                 {perms.canReviewFindings && finding.status === 'pending_review' && (
                   <div className="flex gap-1.5 shrink-0">
                     <button
-                      className="btn-ghost text-xs px-2.5 py-1.5 flex items-center gap-1 text-risk-low hover:bg-risk-low/10"
+                      className="btn-ghost text-sm px-2.5 py-1.5 flex items-center gap-1 text-risk-low hover:bg-risk-low/10"
                       onClick={() => reviewMutation.mutate({ findingId: finding.id, status: 'approved' })}
                       disabled={reviewMutation.isPending}
                     >
-                      <CheckCircle size={13} /> Approve
+                      <CheckCircle size={15} /> Approve
                     </button>
                     <button
-                      className="btn-ghost text-xs px-2.5 py-1.5 flex items-center gap-1 text-risk-high hover:bg-risk-high/10"
+                      className="btn-ghost text-sm px-2.5 py-1.5 flex items-center gap-1 text-risk-high hover:bg-risk-high/10"
                       onClick={() => reviewMutation.mutate({ findingId: finding.id, status: 'rejected' })}
                       disabled={reviewMutation.isPending}
                     >
-                      <XCircle size={13} /> Reject
+                      <XCircle size={15} /> Reject
                     </button>
                   </div>
                 )}

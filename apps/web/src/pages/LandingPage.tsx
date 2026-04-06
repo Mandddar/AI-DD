@@ -21,18 +21,18 @@ function Navbar() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold/10 ring-1 ring-gold/30">
             <span className="font-display text-base font-semibold text-gold">DD</span>
           </div>
-          <span className="font-display text-lg text-text-primary">AI DD</span>
+          <span className="font-display text-xl text-text-primary">AI DD</span>
         </div>
         <div className="flex items-center gap-3">
           <Link
             to="/login"
-            className="text-sm text-text-secondary hover:text-text-primary transition-colors px-4 py-2"
+            className="text-base text-text-secondary hover:text-text-primary transition-colors px-4 py-2"
           >
             Sign in
           </Link>
           <Link
             to="/register"
-            className="btn-primary text-sm"
+            className="btn-primary text-base"
           >
             Get started
           </Link>
@@ -56,7 +56,7 @@ function Hero() {
         {/* Badge */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/5 px-4 py-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" />
-          <span className="text-xs font-medium text-gold tracking-wide">AI-Powered M&A Due Diligence</span>
+          <span className="text-sm font-medium text-gold tracking-wide">AI-Powered M&A Due Diligence</span>
         </div>
 
         {/* Headline */}
@@ -66,17 +66,17 @@ function Hero() {
           <span className="text-gold">Miss nothing.</span>
         </h1>
 
-        <p className="mx-auto mt-6 max-w-2xl text-lg text-text-secondary leading-relaxed">
+        <p className="mx-auto mt-6 max-w-2xl text-xl text-text-secondary leading-relaxed">
           AI DD automates the most labour-intensive parts of due diligence — document review, red-flag detection, and risk scoring — so your advisors focus on decisions, not reading.
         </p>
 
         {/* CTAs */}
         <div className="mt-10 flex items-center justify-center gap-4">
-          <Link to="/register" className="btn-primary gap-2 text-sm px-6 py-2.5">
-            Start free trial <ArrowRight size={15} />
+          <Link to="/register" className="btn-primary gap-2 text-base px-6 py-2.5">
+            Start free trial <ArrowRight size={17} />
           </Link>
-          <Link to="/login" className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors">
-            Sign in to your account <ChevronRight size={14} />
+          <Link to="/login" className="flex items-center gap-1.5 text-base text-text-secondary hover:text-text-primary transition-colors">
+            Sign in to your account <ChevronRight size={16} />
           </Link>
         </div>
 
@@ -90,7 +90,7 @@ function Hero() {
           ].map(({ value, label }) => (
             <div key={label} className="text-center">
               <p className="font-display text-2xl text-text-primary">{value}</p>
-              <p className="text-xs mt-0.5">{label}</p>
+              <p className="text-sm mt-0.5">{label}</p>
             </div>
           ))}
         </div>
@@ -125,47 +125,47 @@ function UIPreview() {
             <div className="h-3 w-3 rounded-full bg-risk-high/60" />
             <div className="h-3 w-3 rounded-full bg-risk-medium/60" />
             <div className="h-3 w-3 rounded-full bg-risk-low/60" />
-            <span className="ml-3 text-xs text-text-muted font-mono">AI DD — MediTech GmbH — Analysis Run #4</span>
+            <span className="ml-3 text-sm text-text-muted font-mono">AI DD — MediTech GmbH — Analysis Run #4</span>
           </div>
 
           <div className="grid grid-cols-3 divide-x divide-canvas-border">
             {/* Sidebar mock */}
             <div className="col-span-1 bg-canvas-subtle p-4 space-y-1">
-              <p className="text-xs text-text-muted uppercase tracking-wider mb-3">Workstreams</p>
+              <p className="text-sm text-text-muted uppercase tracking-wider mb-3">Workstreams</p>
               {WORKSTREAMS.map((ws) => (
-                <div key={ws.name} className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${ws.active ? "bg-gold/10 text-gold" : "text-text-secondary"}`}>
+                <div key={ws.name} className={`flex items-center justify-between rounded-lg px-3 py-2 text-base ${ws.active ? "bg-gold/10 text-gold" : "text-text-secondary"}`}>
                   <span>{ws.name}</span>
-                  <span className={`text-xs font-medium ${ws.color}`}>{ws.count}</span>
+                  <span className={`text-sm font-medium ${ws.color}`}>{ws.count}</span>
                 </div>
               ))}
               <div className="mt-4 pt-4 border-t border-canvas-border">
-                <p className="text-xs text-text-muted uppercase tracking-wider mb-2">Run Status</p>
+                <p className="text-sm text-text-muted uppercase tracking-wider mb-2">Run Status</p>
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-risk-low" />
-                  <span className="text-xs text-risk-low">Completed</span>
+                  <span className="text-sm text-risk-low">Completed</span>
                 </div>
-                <p className="mt-1 text-xs text-text-muted">16 findings · 3 critical</p>
+                <p className="mt-1 text-sm text-text-muted">16 findings · 3 critical</p>
               </div>
             </div>
 
             {/* Findings list mock */}
             <div className="col-span-2 divide-y divide-canvas-border">
               <div className="px-4 py-3 flex items-center justify-between">
-                <p className="text-sm font-semibold text-text-primary">Findings — Legal</p>
-                <span className="text-xs text-text-muted">7 items</span>
+                <p className="text-base font-semibold text-text-primary">Findings — Legal</p>
+                <span className="text-sm text-text-muted">7 items</span>
               </div>
               {MOCK_FINDINGS.map(({ label, text, color }) => (
                 <div key={label} className="px-4 py-3.5">
                   <div className="flex items-start gap-3">
-                    <span className={`mt-0.5 inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${color}`}>
+                    <span className={`mt-0.5 inline-flex shrink-0 rounded-full px-2 py-0.5 text-sm font-semibold ${color}`}>
                       {label}
                     </span>
-                    <p className="text-xs text-text-secondary leading-relaxed">{text}</p>
+                    <p className="text-sm text-text-secondary leading-relaxed">{text}</p>
                   </div>
                 </div>
               ))}
               <div className="px-4 py-3 text-center">
-                <span className="text-xs text-text-muted">4 more findings…</span>
+                <span className="text-sm text-text-muted">4 more findings…</span>
               </div>
             </div>
           </div>
@@ -214,7 +214,7 @@ function Features() {
     <section className="py-24">
       <div className="mx-auto max-w-6xl px-6">
         <div className="mb-14 text-center">
-          <p className="text-xs font-medium uppercase tracking-widest text-gold mb-3">Capabilities</p>
+          <p className="text-sm font-medium uppercase tracking-widest text-gold mb-3">Capabilities</p>
           <h2 className="font-display text-4xl text-text-primary">Everything a deal team needs</h2>
           <p className="mt-4 text-text-secondary max-w-xl mx-auto">
             Built specifically for M&A advisors, legal counsel, and financial analysts running buy-side and sell-side mandates.
@@ -223,12 +223,12 @@ function Features() {
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map(({ icon: Icon, title, body }) => (
-            <div key={title} className="card p-5 group hover:border-gold/20 transition-colors">
+            <div key={title} className="card p-6 group hover:border-gold/20 transition-colors">
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-gold/10 ring-1 ring-gold/20 group-hover:bg-gold/15 transition-colors">
-                <Icon size={18} className="text-gold" />
+                <Icon size={20} className="text-gold" />
               </div>
-              <h3 className="mb-2 text-sm font-semibold text-text-primary">{title}</h3>
-              <p className="text-xs leading-relaxed text-text-secondary">{body}</p>
+              <h3 className="mb-2 text-base font-semibold text-text-primary">{title}</h3>
+              <p className="text-sm leading-relaxed text-text-secondary">{body}</p>
             </div>
           ))}
         </div>
@@ -266,7 +266,7 @@ function HowItWorks() {
     <section className="py-24 border-t border-canvas-border">
       <div className="mx-auto max-w-6xl px-6">
         <div className="mb-14 text-center">
-          <p className="text-xs font-medium uppercase tracking-widest text-gold mb-3">Process</p>
+          <p className="text-sm font-medium uppercase tracking-widest text-gold mb-3">Process</p>
           <h2 className="font-display text-4xl text-text-primary">From data room to red flags in minutes</h2>
         </div>
 
@@ -279,10 +279,10 @@ function HowItWorks() {
               )}
               <div className="relative z-10">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-canvas-card border border-canvas-border">
-                  <span className="font-display text-lg text-gold">{step}</span>
+                  <span className="font-display text-xl text-gold">{step}</span>
                 </div>
-                <h3 className="mb-2 text-sm font-semibold text-text-primary">{title}</h3>
-                <p className="text-xs leading-relaxed text-text-secondary">{body}</p>
+                <h3 className="mb-2 text-base font-semibold text-text-primary">{title}</h3>
+                <p className="text-sm leading-relaxed text-text-secondary">{body}</p>
               </div>
             </div>
           ))}
@@ -311,14 +311,14 @@ function CTASection() {
           Set up an account in under two minutes. Your first analysis run is on us.
         </p>
 
-        <Link to="/register" className="btn-primary gap-2 text-sm px-8 py-3 inline-flex">
-          Create free account <ArrowRight size={15} />
+        <Link to="/register" className="btn-primary gap-2 text-base px-8 py-3 inline-flex">
+          Create free account <ArrowRight size={17} />
         </Link>
 
         <div className="mt-8 flex items-center justify-center gap-6 flex-wrap">
           {CTA_TRUST_ITEMS.map((item) => (
-            <div key={item} className="flex items-center gap-2 text-xs text-text-muted">
-              <CheckCircle size={13} className="text-risk-low shrink-0" />
+            <div key={item} className="flex items-center gap-2 text-sm text-text-muted">
+              <CheckCircle size={15} className="text-risk-low shrink-0" />
               {item}
             </div>
           ))}
@@ -335,15 +335,15 @@ function Footer() {
       <div className="mx-auto max-w-6xl px-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gold/10">
-            <span className="font-display text-sm text-gold">DD</span>
+            <span className="font-display text-base text-gold">DD</span>
           </div>
-          <span className="text-sm text-text-muted">AI DD</span>
+          <span className="text-base text-text-muted">AI DD</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-text-muted">
-          <AlertTriangle size={11} className="text-gold shrink-0" />
+        <div className="flex items-center gap-2 text-sm text-text-muted">
+          <AlertTriangle size={13} className="text-gold shrink-0" />
           AI-generated findings require human verification. Not a substitute for professional advice.
         </div>
-        <p className="text-xs text-text-muted">© {new Date().getFullYear()} AI DD</p>
+        <p className="text-sm text-text-muted">© {new Date().getFullYear()} AI DD</p>
       </div>
     </footer>
   );

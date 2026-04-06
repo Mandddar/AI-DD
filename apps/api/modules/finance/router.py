@@ -14,8 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
 from modules.auth.dependencies import project_manager, project_contributor, project_reader
 from modules.auth.models import User
-from .models import FinancialDataset, FinancialLineItem, VarianceAnalysis, ChartOfAccounts
-from .schemas import FinancialDatasetOut, LineItemOut, VarianceAnalysisOut
+from .models import FinancialDataset, FinancialLineItem, VarianceAnalysis, FinancialInsight, ChartOfAccounts
+from .schemas import FinancialDatasetOut, LineItemOut, VarianceAnalysisOut, FinancialInsightOut
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects/{project_id}/finance", tags=["finance"])
@@ -355,7 +355,7 @@ async def _run_variance(project_id: UUID, analysis_type: str, db: AsyncSession) 
     datasets = list(result.scalars().all())
 
     if not datasets:
-        return _mock_variance_results(analysis_type)
+        return []
 
     try:
         import pandas as pd
@@ -366,13 +366,13 @@ async def _run_variance(project_id: UUID, analysis_type: str, db: AsyncSession) 
                 all_rows.extend(ds.raw_data)
 
         if not all_rows:
-            return _mock_variance_results(analysis_type)
+            return []
 
         df = pd.DataFrame(all_rows)
         numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
 
         if not numeric_cols:
-            return _mock_variance_results(analysis_type)
+            return []
 
         results = []
         for col in numeric_cols[:10]:
@@ -395,29 +395,11 @@ async def _run_variance(project_id: UUID, analysis_type: str, db: AsyncSession) 
                 "flag": flag,
             })
 
-        return results if results else _mock_variance_results(analysis_type)
+        return results
     except Exception as e:
         logger.warning("Variance computation failed: %s", e)
-        return _mock_variance_results(analysis_type)
+        return []
 
-
-def _mock_variance_results(analysis_type: str) -> list[dict]:
-    if analysis_type == "external_benchmark":
-        return [
-            {"metric": "Revenue Growth", "current": 8.5, "prior": 12.0, "variance_pct": -29.2, "flag": "significant", "label": "Below industry median of 12%"},
-            {"metric": "Gross Margin", "current": 42.1, "prior": 45.0, "variance_pct": -6.4, "flag": "normal", "label": "In line with industry range"},
-            {"metric": "EBITDA Margin", "current": 18.3, "prior": 20.5, "variance_pct": -10.7, "flag": "normal", "label": "Slightly below benchmark"},
-            {"metric": "Working Capital Days", "current": 65, "prior": 55, "variance_pct": 18.2, "flag": "normal", "label": "Above industry average"},
-            {"metric": "Customer Concentration (Top 5)", "current": 58, "prior": 40, "variance_pct": 45.0, "flag": "significant", "label": "Above threshold of 40%"},
-        ]
-    return [
-        {"metric": "Revenue", "current": 15200000, "prior": 14000000, "variance_pct": 8.6, "flag": "normal"},
-        {"metric": "Cost of Goods Sold", "current": 8800000, "prior": 7700000, "variance_pct": 14.3, "flag": "normal"},
-        {"metric": "Gross Profit", "current": 6400000, "prior": 6300000, "variance_pct": 1.6, "flag": "normal"},
-        {"metric": "Operating Expenses", "current": 3900000, "prior": 3200000, "variance_pct": 21.9, "flag": "significant"},
-        {"metric": "EBITDA", "current": 2780000, "prior": 2870000, "variance_pct": -3.1, "flag": "normal"},
-        {"metric": "Net Debt", "current": 4200000, "prior": 3500000, "variance_pct": 20.0, "flag": "significant"},
-    ]
 
 
 @router.post("/variance/run", response_model=VarianceAnalysisOut, status_code=status.HTTP_201_CREATED)
@@ -427,13 +409,34 @@ async def run_variance_analysis(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(project_manager),
 ):
-    result = await db.execute(
+    # Check for uploaded datasets
+    ds_result = await db.execute(
         select(FinancialDataset).where(FinancialDataset.project_id == project_id).limit(1)
     )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Upload financial data before running variance analysis")
+    has_datasets = ds_result.scalar_one_or_none() is not None
 
+    # Also check for AI insights with variance data
+    insight_result = await db.execute(
+        select(FinancialInsight)
+        .where(FinancialInsight.project_id == project_id)
+        .where(FinancialInsight.status == "completed")
+        .order_by(FinancialInsight.created_at.desc())
+        .limit(1)
+    )
+    latest_insight = insight_result.scalar_one_or_none()
+
+    if not has_datasets and not latest_insight:
+        raise HTTPException(
+            status_code=400,
+            detail="Upload financial data or run AI analysis on data room documents first.",
+        )
+
+    # Try dataset-based variance first
     results = await _run_variance(project_id, analysis_type, db)
+
+    # Fall back to AI insight variance if no dataset results
+    if not results and latest_insight and latest_insight.variance_results:
+        results = latest_insight.variance_results
 
     analysis = VarianceAnalysis(
         project_id=project_id,
@@ -469,13 +472,13 @@ def _compute_kpis(raw_data: list[dict], columns: list[str]) -> list[dict]:
     import pandas as pd
 
     if not raw_data:
-        return _mock_kpis()
+        return []
 
     df = pd.DataFrame(raw_data)
     numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
 
     if not numeric_cols:
-        return _mock_kpis()
+        return []
 
     kpis = []
     # Sum numeric columns to derive totals
@@ -509,22 +512,8 @@ def _compute_kpis(raw_data: list[dict], columns: list[str]) -> list[dict]:
             kpis.append({"name": "Cost of Goods Sold", "value": round(cogs, 2), "unit": "EUR", "category": "earnings"})
             kpis.append({"name": "Material Cost Ratio", "value": round(cogs / revenue * 100, 1), "unit": "%", "category": "efficiency"})
 
-    if not kpis:
-        return _mock_kpis()
     return kpis
 
-
-def _mock_kpis() -> list[dict]:
-    return [
-        {"name": "Revenue", "value": 15200000, "unit": "EUR", "category": "earnings"},
-        {"name": "Gross Profit", "value": 6400000, "unit": "EUR", "category": "earnings"},
-        {"name": "Gross Margin", "value": 42.1, "unit": "%", "category": "profitability"},
-        {"name": "EBITDA", "value": 2780000, "unit": "EUR", "category": "earnings"},
-        {"name": "EBITDA Margin", "value": 18.3, "unit": "%", "category": "profitability"},
-        {"name": "Personnel Cost Ratio", "value": 32.5, "unit": "%", "category": "efficiency"},
-        {"name": "Material Cost Ratio", "value": 57.9, "unit": "%", "category": "efficiency"},
-        {"name": "Equity Ratio", "value": 38.2, "unit": "%", "category": "leverage"},
-    ]
 
 
 @router.get("/kpis")
@@ -533,7 +522,9 @@ async def get_financial_kpis(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(project_reader),
 ):
-    """Get computed financial KPIs for the project (spec §12.3)."""
+    """Get computed financial KPIs for the project (spec §12.3).
+    Uses uploaded datasets first; falls back to latest AI insight if no datasets."""
+    # 1. Try from uploaded datasets
     result = await db.execute(
         select(FinancialDataset)
         .where(FinancialDataset.project_id == project_id)
@@ -550,7 +541,23 @@ async def get_financial_kpis(
             if not columns and ds.structure_metadata:
                 columns = ds.structure_metadata.get("columns", [])
 
-    return _compute_kpis(all_rows, columns)
+    kpis = _compute_kpis(all_rows, columns)
+    if kpis:
+        return kpis
+
+    # 2. Fall back to latest AI insight
+    insight_result = await db.execute(
+        select(FinancialInsight)
+        .where(FinancialInsight.project_id == project_id)
+        .where(FinancialInsight.status == "completed")
+        .order_by(FinancialInsight.created_at.desc())
+        .limit(1)
+    )
+    insight = insight_result.scalar_one_or_none()
+    if insight and insight.kpis:
+        return insight.kpis
+
+    return []
 
 
 # ── Period Comparison ─────────────────────────────────────
@@ -571,7 +578,7 @@ async def get_period_comparison(
     datasets = list(result.scalars().all())
 
     if not datasets:
-        return _mock_period_comparison()
+        return []
 
     try:
         import pandas as pd
@@ -597,7 +604,7 @@ async def get_period_comparison(
             periods.append(period_data)
 
         if len(periods) < 2:
-            return _mock_period_comparison()
+            return []
 
         # Build comparison with variance between consecutive periods
         comparisons = []
@@ -619,32 +626,66 @@ async def get_period_comparison(
         return comparisons
     except Exception as e:
         logger.warning("Period comparison failed: %s", e)
-        return _mock_period_comparison()
+        return []
 
 
-def _mock_period_comparison() -> list[dict]:
-    return [
-        {"metric": "Revenue", "periods": [
-            {"period": "2022", "value": 12500000},
-            {"period": "2023", "value": 14000000, "change_pct": 12.0},
-            {"period": "2024", "value": 15200000, "change_pct": 8.6},
-        ]},
-        {"metric": "EBITDA", "periods": [
-            {"period": "2022", "value": 2200000},
-            {"period": "2023", "value": 2870000, "change_pct": 30.5},
-            {"period": "2024", "value": 2780000, "change_pct": -3.1},
-        ]},
-        {"metric": "Operating Expenses", "periods": [
-            {"period": "2022", "value": 2800000},
-            {"period": "2023", "value": 3200000, "change_pct": 14.3},
-            {"period": "2024", "value": 3900000, "change_pct": 21.9},
-        ]},
-        {"metric": "Net Debt", "periods": [
-            {"period": "2022", "value": 3000000},
-            {"period": "2023", "value": 3500000, "change_pct": 16.7},
-            {"period": "2024", "value": 4200000, "change_pct": 20.0},
-        ]},
-    ]
+
+# ── AI Document Analysis ─────────────────────────────────
+
+@router.post("/analyze", response_model=FinancialInsightOut, status_code=status.HTTP_201_CREATED)
+async def analyze_financial_data(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_manager),
+):
+    """
+    AI-powered financial analysis: pulls documents from the data room + uploaded
+    datasets, extracts figures, computes KPIs, finds variance, and generates
+    follow-up questions for anomalies.
+    """
+    from .analyzer import run_financial_analysis
+    insight = await run_financial_analysis(project_id, user.id, db)
+    if insight.status == "failed" and not insight.extracted_figures:
+        raise HTTPException(
+            status_code=400,
+            detail=insight.summary or "Analysis failed. Ensure financial documents or datasets are available.",
+        )
+    return insight
+
+
+@router.get("/insights", response_model=list[FinancialInsightOut])
+async def list_insights(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_reader),
+):
+    """List all AI-generated financial insights for the project, newest first."""
+    result = await db.execute(
+        select(FinancialInsight)
+        .where(FinancialInsight.project_id == project_id)
+        .order_by(FinancialInsight.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+@router.get("/insights/latest", response_model=FinancialInsightOut)
+async def get_latest_insight(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_reader),
+):
+    """Get the most recent completed AI financial insight."""
+    result = await db.execute(
+        select(FinancialInsight)
+        .where(FinancialInsight.project_id == project_id)
+        .where(FinancialInsight.status == "completed")
+        .order_by(FinancialInsight.created_at.desc())
+        .limit(1)
+    )
+    insight = result.scalar_one_or_none()
+    if not insight:
+        raise HTTPException(status_code=404, detail="No completed analysis found. Run an analysis first.")
+    return insight
 
 
 # ── Chart Data ────────────────────────────────────────────
@@ -674,6 +715,26 @@ async def get_chart_data(
                 "variance_pct": r.get("variance_pct", 0),
                 "flag": r.get("flag", "normal"),
             })
+
+    # Fall back to AI insight variance data if no manual variance analysis exists
+    if not variance_chart:
+        insight_result = await db.execute(
+            select(FinancialInsight)
+            .where(FinancialInsight.project_id == project_id)
+            .where(FinancialInsight.status == "completed")
+            .order_by(FinancialInsight.created_at.desc())
+            .limit(1)
+        )
+        ai_insight = insight_result.scalar_one_or_none()
+        if ai_insight and ai_insight.variance_results:
+            for r in ai_insight.variance_results:
+                variance_chart.append({
+                    "name": r.get("metric", ""),
+                    "current": r.get("current", 0),
+                    "prior": r.get("prior", 0),
+                    "variance_pct": r.get("variance_pct", 0),
+                    "flag": r.get("flag", "normal"),
+                })
 
     # Period comparison data for trend chart
     period_data = await get_period_comparison(project_id, db, user)

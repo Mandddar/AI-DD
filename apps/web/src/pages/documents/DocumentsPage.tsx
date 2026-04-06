@@ -42,7 +42,7 @@ function statusBadge(status: DocumentStatus) {
   };
   const entry = map[status] || map.uploaded;
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium", entry.cls)}>
+    <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-medium", entry.cls)}>
       {entry.icon} {entry.label}
     </span>
   );
@@ -78,9 +78,9 @@ function DropZone({ onFiles }: { onFiles: (files: File[]) => void }) {
           : "border-canvas-border bg-canvas-subtle hover:border-gold/50 hover:bg-gold/5"
       )}
     >
-      <Upload size={28} className={cn("mb-3", dragging ? "text-gold" : "text-text-muted")} />
-      <p className="text-sm font-medium text-text-primary">Drop files here or click to browse</p>
-      <p className="mt-1 text-xs text-text-muted">PDF, Word, Excel, CSV — up to 50 MB</p>
+      <Upload size={32} className={cn("mb-3", dragging ? "text-gold" : "text-text-muted")} />
+      <p className="text-base font-medium text-text-primary">Drop files here or click to browse</p>
+      <p className="mt-1 text-sm text-text-muted">PDF, Word, Excel, CSV — up to 50 MB</p>
       <input
         ref={inputRef}
         type="file"
@@ -100,18 +100,18 @@ function NdaGate({ projectId, children }: { projectId: string; children: React.R
   if (accepted) return <>{children}</>;
 
   return (
-    <div className="p-6 animate-fade-in">
+    <div className="p-7 animate-fade-in">
       <div className="card max-w-2xl mx-auto p-8 space-y-6">
         <div className="text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gold/10 ring-1 ring-gold/30">
             <FileText size={24} className="text-gold" />
           </div>
-          <h2 className="font-display text-xl text-text-primary">Non-Disclosure Agreement</h2>
-          <p className="mt-2 text-sm text-text-secondary">
+          <h2 className="font-display text-2xl text-text-primary">Non-Disclosure Agreement</h2>
+          <p className="mt-2 text-base text-text-secondary">
             Before accessing documents for this deal, you must accept the NDA terms.
           </p>
         </div>
-        <div className="bg-surface rounded-lg border border-canvas-border p-4 text-sm text-text-secondary space-y-3 max-h-64 overflow-y-auto">
+        <div className="bg-surface rounded-lg border border-canvas-border p-4 text-base text-text-secondary space-y-3 max-h-64 overflow-y-auto">
           <p>
             By accessing the data room for this deal, you acknowledge and agree that all information,
             documents, and materials contained herein are strictly confidential and proprietary.
@@ -157,7 +157,7 @@ function TagBadges({ projectId, documentId }: { projectId: string; documentId: s
         <span
           key={t.id}
           className={cn(
-            "inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium",
+            "inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium",
             t.source === "ai" ? "bg-gold/10 text-gold" : "bg-surface text-text-secondary"
           )}
           title={t.confidence ? `Confidence: ${Math.round(t.confidence * 100)}%` : "Manual tag"}
@@ -167,7 +167,7 @@ function TagBadges({ projectId, documentId }: { projectId: string; documentId: s
         </span>
       ))}
       {tags.length > 4 && (
-        <span className="text-[10px] text-text-muted">+{tags.length - 4}</span>
+        <span className="text-xs text-text-muted">+{tags.length - 4}</span>
       )}
     </div>
   );
@@ -185,6 +185,7 @@ export function DocumentsPage() {
   const [currentFolderId, setCurrentFolderId] = useState<string | undefined>(undefined);
   const [folderPath, setFolderPath] = useState<{ id?: string; name: string }[]>([{ name: "Root" }]);
   const [newFolderName, setNewFolderName] = useState("");
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ["documents", projectId],
@@ -290,11 +291,11 @@ export function DocumentsPage() {
 
   return (
     <NdaGate projectId={projectId!}>
-    <div className="p-6 space-y-5 animate-fade-in">
+    <div className="p-7 space-y-5 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl text-text-primary">Documents</h1>
-          <p className="mt-1 text-sm text-text-secondary">
+          <p className="mt-1 text-base text-text-secondary">
             {documents.length} document{documents.length !== 1 ? "s" : ""} ·{" "}
             {documents.filter((d) => d.status === "ready" || d.status === "approved").length} ready
           </p>
@@ -305,7 +306,7 @@ export function DocumentsPage() {
           <button
             onClick={() => setShowSearch(!showSearch)}
             className={cn(
-              "flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors",
+              "flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors",
               showSearch ? "bg-gold text-canvas" : "bg-surface text-text-secondary hover:bg-surface-hover"
             )}
           >
@@ -315,14 +316,14 @@ export function DocumentsPage() {
           {/* Workstream selector */}
           {perms.canUploadDocuments && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-text-muted">Upload to:</span>
+              <span className="text-sm text-text-muted">Upload to:</span>
               <div className="flex rounded border border-canvas-border overflow-hidden">
                 {WORKSTREAMS.map((ws) => (
                   <button
                     key={ws.value}
                     onClick={() => setWorkstream(ws.value)}
                     className={cn(
-                      "px-3 py-1.5 text-xs font-medium transition-colors",
+                      "px-3 py-1.5 text-sm font-medium transition-colors",
                       workstream === ws.value
                         ? "bg-gold text-canvas"
                         : "bg-canvas-card text-text-secondary hover:bg-surface"
@@ -356,16 +357,16 @@ export function DocumentsPage() {
               {searchResults.map((r, i) => (
                 <div key={i} className="py-2 px-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-text-primary">{r.document_name}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface text-text-muted capitalize">{r.workstream}</span>
+                    <span className="text-base font-medium text-text-primary">{r.document_name}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-surface text-text-muted capitalize">{r.workstream}</span>
                   </div>
-                  <p className="text-xs text-text-secondary mt-0.5 line-clamp-2">{r.snippet}</p>
+                  <p className="text-sm text-text-secondary mt-0.5 line-clamp-2">{r.snippet}</p>
                 </div>
               ))}
             </div>
           )}
           {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
-            <p className="text-xs text-text-muted text-center py-2">No results found.</p>
+            <p className="text-sm text-text-muted text-center py-2">No results found.</p>
           )}
         </div>
       )}
@@ -373,7 +374,7 @@ export function DocumentsPage() {
       {/* Folder Navigation */}
       <div className="card p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1 text-sm">
+          <div className="flex items-center gap-1 text-base">
             {folderPath.map((entry, i) => (
               <span key={i} className="flex items-center gap-1">
                 {i > 0 && <ChevronRight size={12} className="text-text-muted" />}
@@ -388,17 +389,17 @@ export function DocumentsPage() {
             <div className="flex items-center gap-2">
               {folders.length === 0 && !currentFolderId && (
                 <button onClick={() => initFoldersMutation.mutate()}
-                  className="btn-ghost text-xs px-3 py-1.5 flex items-center gap-1" disabled={initFoldersMutation.isPending}>
+                  className="btn-ghost text-sm px-3 py-1.5 flex items-center gap-1" disabled={initFoldersMutation.isPending}>
                   <FolderPlus size={12} /> Init Default Folders
                 </button>
               )}
               <div className="flex items-center gap-1">
-                <input className="input text-xs py-1 px-2 w-32" placeholder="New folder..." value={newFolderName}
+                <input className="input text-sm py-1 px-2 w-32" placeholder="New folder..." value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && newFolderName.trim()) createFolderMutation.mutate(newFolderName.trim()); }}
                 />
                 <button onClick={() => newFolderName.trim() && createFolderMutation.mutate(newFolderName.trim())}
-                  className="btn-ghost text-xs px-2 py-1" disabled={!newFolderName.trim()}>
+                  className="btn-ghost text-sm px-2 py-1" disabled={!newFolderName.trim()}>
                   <FolderPlus size={14} />
                 </button>
               </div>
@@ -409,7 +410,7 @@ export function DocumentsPage() {
           <div className="flex flex-wrap gap-2">
             {folders.map((f) => (
               <button key={f.id} onClick={() => navigateToFolder(f.id, f.name)}
-                className="flex items-center gap-1.5 rounded-lg border border-canvas-border bg-surface px-3 py-2 text-sm text-text-primary hover:bg-surface-hover transition-colors">
+                className="flex items-center gap-1.5 rounded-lg border border-canvas-border bg-surface px-3 py-2 text-base text-text-primary hover:bg-surface-hover transition-colors">
                 <FolderOpen size={14} className="text-gold" /> {f.name}
               </button>
             ))}
@@ -420,20 +421,20 @@ export function DocumentsPage() {
       {/* Bulk Operations Toolbar */}
       {selectedDocs.size > 0 && perms.canDeleteDocuments && (
         <div className="card px-4 py-3 flex items-center gap-4 bg-gold/5 border-gold/30">
-          <span className="text-sm text-gold font-medium">{selectedDocs.size} selected</span>
+          <span className="text-base text-gold font-medium">{selectedDocs.size} selected</span>
           <button onClick={() => bulkStatusMutation.mutate("under_review")}
-            className="btn-ghost text-xs px-3 py-1.5">Mark Under Review</button>
+            className="btn-ghost text-sm px-3 py-1.5">Mark Under Review</button>
           <button onClick={() => bulkStatusMutation.mutate("approved")}
-            className="btn-ghost text-xs px-3 py-1.5">Approve</button>
+            className="btn-ghost text-sm px-3 py-1.5">Approve</button>
           <button onClick={() => { if (confirm(`Delete ${selectedDocs.size} documents?`)) bulkDeleteMutation.mutate(); }}
-            className="btn-ghost text-xs px-3 py-1.5 text-risk-high">Delete Selected</button>
+            className="btn-ghost text-sm px-3 py-1.5 text-risk-high">Delete Selected</button>
           <button onClick={() => setSelectedDocs(new Set())}
-            className="btn-ghost text-xs px-3 py-1.5 ml-auto">Clear Selection</button>
+            className="btn-ghost text-sm px-3 py-1.5 ml-auto">Clear Selection</button>
         </div>
       )}
 
       {perms.isReadOnly && (
-        <div className="rounded-lg border border-canvas-border bg-surface/50 px-4 py-2.5 text-sm text-text-secondary">
+        <div className="rounded-lg border border-canvas-border bg-surface/50 px-4 py-2.5 text-base text-text-secondary">
           Read-only access — you can view and download approved documents.
         </div>
       )}
@@ -444,7 +445,7 @@ export function DocumentsPage() {
       {uploading.length > 0 && (
         <div className="space-y-1">
           {uploading.map((name) => (
-            <div key={name} className="flex items-center gap-2 rounded bg-gold/5 px-3 py-2 text-xs text-gold">
+            <div key={name} className="flex items-center gap-2 rounded bg-gold/5 px-3 py-2 text-sm text-gold">
               <Loader2 size={12} className="animate-spin" />
               Uploading {name}...
             </div>
@@ -460,7 +461,7 @@ export function DocumentsPage() {
       ) : documents.length === 0 ? (
         <div className="card p-10 text-center">
           <FileText size={36} className="mx-auto mb-3 text-text-muted" />
-          <p className="text-sm text-text-secondary">No documents yet. Drop files above to get started.</p>
+          <p className="text-base text-text-secondary">No documents yet. Drop files above to get started.</p>
         </div>
       ) : (
         <div className="card divide-y divide-canvas-border">
@@ -480,14 +481,14 @@ export function DocumentsPage() {
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-medium text-text-primary">{doc.name}</p>
+                    <p className="truncate text-base font-medium text-text-primary">{doc.name}</p>
                     {doc.version_number > 1 && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] text-text-muted bg-surface rounded px-1.5 py-0.5">
+                      <span className="inline-flex items-center gap-0.5 text-xs text-text-muted bg-surface rounded px-1.5 py-0.5">
                         <GitBranch size={8} /> v{doc.version_number}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-text-muted">
+                  <p className="text-sm text-text-muted">
                     {formatBytes(doc.size_bytes)}
                     {doc.page_count ? ` · ${doc.page_count} pages` : ""}
                     {" · "}
@@ -508,7 +509,7 @@ export function DocumentsPage() {
                         <button
                           key={ns}
                           onClick={() => statusMutation.mutate({ docId: doc.id, status: ns })}
-                          className="text-[10px] px-1.5 py-0.5 rounded bg-surface hover:bg-surface-hover text-text-secondary transition-colors capitalize"
+                          className="text-xs px-1.5 py-0.5 rounded bg-surface hover:bg-surface-hover text-text-secondary transition-colors capitalize"
                           title={`Move to ${ns.replace('_', ' ')}`}
                         >
                           {ns.replace('_', ' ')}
@@ -517,14 +518,20 @@ export function DocumentsPage() {
                     </div>
                   )}
 
+                  <button
+                    onClick={() => setPreviewDoc(doc)}
+                    className="text-text-muted hover:text-gold transition-colors"
+                    title="Preview"
+                  >
+                    <Eye size={16} />
+                  </button>
+
                   <a
                     href={documentsApi.downloadUrl(doc.project_id, doc.id)}
-                    target="_blank"
-                    rel="noreferrer"
                     className="text-text-muted hover:text-text-secondary transition-colors"
                     title="Download"
                   >
-                    <Download size={14} />
+                    <Download size={16} />
                   </a>
 
                   {perms.canDeleteDocuments && (
@@ -533,7 +540,7 @@ export function DocumentsPage() {
                       className="text-text-muted hover:text-risk-high transition-colors"
                       title="Delete"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={16} />
                     </button>
                   )}
                 </div>
@@ -543,6 +550,61 @@ export function DocumentsPage() {
         </div>
       )}
     </div>
+
+    {/* Document Preview Modal */}
+    {previewDoc && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setPreviewDoc(null)}>
+        <div className="relative bg-canvas rounded-xl border border-canvas-border shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-between px-5 py-3 border-b border-canvas-border">
+            <div className="flex items-center gap-3 min-w-0">
+              {fileIcon(previewDoc.mime_type)}
+              <span className="text-base font-medium text-text-primary truncate">{previewDoc.name}</span>
+              {statusBadge(previewDoc.status)}
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href={documentsApi.downloadUrl(previewDoc.project_id, previewDoc.id)}
+                className="btn-ghost px-3 py-1.5 text-sm flex items-center gap-1.5"
+                title="Download"
+              >
+                <Download size={14} /> Download
+              </a>
+              <button onClick={() => setPreviewDoc(null)} className="btn-ghost px-2 py-1.5" title="Close">
+                <XCircle size={16} />
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            {previewDoc.mime_type.includes("pdf") ? (
+              <iframe
+                src={documentsApi.previewUrl(previewDoc.project_id, previewDoc.id)}
+                className="w-full h-full border-0"
+                title={previewDoc.name}
+              />
+            ) : previewDoc.mime_type.startsWith("image/") ? (
+              <div className="flex items-center justify-center h-full p-4">
+                <img
+                  src={documentsApi.previewUrl(previewDoc.project_id, previewDoc.id)}
+                  alt={previewDoc.name}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full gap-4 text-text-secondary">
+                <FileText size={48} className="text-text-muted" />
+                <p className="text-base">Preview not available for this file type.</p>
+                <a
+                  href={documentsApi.downloadUrl(previewDoc.project_id, previewDoc.id)}
+                  className="btn-primary px-4 py-2 text-base flex items-center gap-2"
+                >
+                  <Download size={14} /> Download File
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
     </NdaGate>
   );
 }

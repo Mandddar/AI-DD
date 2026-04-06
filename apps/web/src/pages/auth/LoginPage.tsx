@@ -51,20 +51,20 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen bg-canvas">
       {/* Left panel — branding */}
-      <div className="hidden lg:flex lg:w-[480px] xl:w-[520px] shrink-0 flex-col justify-between border-r border-canvas-border bg-canvas-subtle p-10">
+      <div className="hidden lg:flex lg:w-[480px] xl:w-[520px] shrink-0 flex-col justify-between border-r border-canvas-border bg-canvas-subtle p-12">
         <Link to="/" className="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors text-sm">
           <ArrowLeft size={14} /> Back to home
         </Link>
 
         <div>
           <div className="mb-10">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30 mb-4">
-              <span className="font-display text-xl font-semibold text-gold">DD</span>
+            <div className="flex h-13 w-13 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30 mb-4">
+              <span className="font-display text-2xl font-semibold text-gold">DD</span>
             </div>
-            <h1 className="font-display text-3xl text-text-primary leading-snug">
+            <h1 className="font-display text-4xl text-text-primary leading-snug">
               The intelligent<br />due diligence platform.
             </h1>
-            <p className="mt-3 text-sm text-text-secondary leading-relaxed">
+            <p className="mt-3 text-base text-text-secondary leading-relaxed">
               Purpose-built for M&A advisors who need to move fast without missing the details that matter.
             </p>
           </div>
@@ -72,40 +72,40 @@ export function LoginPage() {
           <div className="space-y-4">
             {SELLING_POINTS.map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gold/10">
-                  <Icon size={14} className="text-gold" />
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10">
+                  <Icon size={16} className="text-gold" />
                 </div>
-                <p className="text-sm text-text-secondary">{text}</p>
+                <p className="text-base text-text-secondary">{text}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="text-xs text-text-muted">© {new Date().getFullYear()} AI DD · M&A Due Diligence Platform</p>
+        <p className="text-sm text-text-muted">© {new Date().getFullYear()} AI DD · M&A Due Diligence Platform</p>
       </div>
 
       {/* Right panel — form */}
       <div className="flex flex-1 items-center justify-center px-6 py-12">
-        <div className="w-full max-w-sm animate-fade-in">
+        <div className="w-full max-w-md animate-fade-in">
           <div className="mb-8 text-center lg:hidden">
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30">
-              <span className="font-display text-base font-semibold text-gold">DD</span>
+              <span className="font-display text-lg font-semibold text-gold">DD</span>
             </div>
             <h1 className="font-display text-xl text-text-primary">AI DD</h1>
           </div>
 
           <div>
-            <h2 className="font-display text-2xl text-text-primary">
+            <h2 className="font-display text-3xl text-text-primary">
               {needs2fa ? "Two-Factor Authentication" : "Welcome back"}
             </h2>
-            <p className="mt-1 text-sm text-text-secondary">
+            <p className="mt-1 text-base text-text-secondary">
               {needs2fa
                 ? "Enter the 6-digit code from your authenticator app."
                 : "Sign in to your account to continue."}
             </p>
           </div>
 
-          <form onSubmit={submit} className="mt-8 space-y-4">
+          <form onSubmit={submit} className="mt-10 space-y-5">
             {!needs2fa ? (
               <>
                 <div>
@@ -131,7 +131,7 @@ export function LoginPage() {
                   />
                 </div>
                 <div className="text-right">
-                  <Link to="/forgot-password" className="text-xs text-gold hover:text-gold-light transition-colors">
+                  <Link to="/forgot-password" className="text-sm text-gold hover:text-gold-light transition-colors">
                     Forgot password?
                   </Link>
                 </div>
@@ -140,7 +140,7 @@ export function LoginPage() {
               <div>
                 <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-gold/5 border border-gold/20">
                   <Smartphone size={16} className="text-gold" />
-                  <span className="text-xs text-gold">2FA is enabled for this account</span>
+                  <span className="text-sm text-gold">2FA is enabled for this account</span>
                 </div>
                 <label className="label">Authentication Code</label>
                 <input
@@ -157,8 +157,8 @@ export function LoginPage() {
             )}
 
             {error && (
-              <div className="rounded-lg border border-risk-high/20 bg-risk-high/5 px-3 py-2.5">
-                <p className="text-xs text-risk-high">{error}</p>
+              <div className="rounded-lg border border-risk-high/20 bg-risk-high/5 px-4 py-3">
+                <p className="text-sm text-risk-high">{error}</p>
               </div>
             )}
 
@@ -185,7 +185,7 @@ export function LoginPage() {
           </form>
 
           {!needs2fa && (
-            <p className="mt-6 text-center text-xs text-text-muted">
+            <p className="mt-6 text-center text-sm text-text-muted">
               Don't have an account?{" "}
               <Link to="/register" className="text-gold hover:text-gold-light transition-colors font-medium">
                 Create one free

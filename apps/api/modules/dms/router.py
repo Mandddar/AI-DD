@@ -1,7 +1,7 @@
 import logging
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form, BackgroundTasks
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, text
 from core.database import get_db
@@ -200,11 +200,18 @@ async def list_documents(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(project_reader),
 ):
-    result = await db.execute(
+    from modules.auth.models import UserRole
+
+    query = (
         select(Document)
         .where(Document.project_id == project_id)
         .order_by(Document.created_at.desc())
     )
+    # Buyers only see approved documents
+    if user.role == UserRole.buyer:
+        query = query.where(Document.status == DocumentStatus.approved)
+
+    result = await db.execute(query)
     return result.scalars().all()
 
 
@@ -217,6 +224,14 @@ async def get_document_text(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(project_reader),
 ):
+    from modules.auth.models import UserRole
+
+    # Buyers can only access text of approved documents
+    if user.role == UserRole.buyer:
+        doc = await db.get(Document, document_id)
+        if not doc or doc.status != DocumentStatus.approved:
+            raise HTTPException(status_code=403, detail="Buyers can only access approved documents")
+
     result = await db.execute(
         select(DocumentText).where(DocumentText.document_id == document_id)
     )
@@ -226,6 +241,44 @@ async def get_document_text(
     return doc_text
 
 
+# ── Flexible auth: Bearer header OR ?token= query param ──
+# Needed for <a href> downloads and <iframe> previews where
+# the browser cannot send a custom Authorization header.
+
+from fastapi import Request as FastAPIRequest
+
+async def _flexible_project_reader(
+    project_id: UUID,
+    request: FastAPIRequest,
+    token: str | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """Authenticate via Bearer header first; fall back to ?token= query param."""
+    from modules.auth.service import get_current_user as svc_get_current_user
+    from modules.auth.dependencies import _check_project_membership
+
+    # 1) Try Authorization header
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        try:
+            user = await svc_get_current_user(db, auth_header[7:])
+            await _check_project_membership(project_id, user, db)
+            return user
+        except Exception:
+            pass
+
+    # 2) Fall back to ?token= query param
+    if token:
+        try:
+            user = await svc_get_current_user(db, token)
+            await _check_project_membership(project_id, user, db)
+            return user
+        except Exception:
+            pass
+
+    raise HTTPException(status_code=401, detail="Authentication required. Pass Bearer header or ?token= query param.")
+
+
 # ── Download ───────────────────────────────────────────────
 
 @router.get("/{document_id}/download")
@@ -233,15 +286,52 @@ async def download_document(
     project_id: UUID,
     document_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(project_reader),
+    user: User = Depends(_flexible_project_reader),
 ):
+    """Download a document. Accepts auth via Bearer header OR ?token= query param."""
+    from modules.auth.models import UserRole
+
     doc = await db.get(Document, document_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
+    if user.role == UserRole.buyer and doc.status != DocumentStatus.approved:
+        raise HTTPException(status_code=403, detail="Buyers can only access approved documents")
     return FileResponse(
         path=doc.storage_path,
         filename=doc.original_filename,
         media_type=doc.mime_type,
+    )
+
+
+@router.get("/{document_id}/preview")
+async def preview_document(
+    project_id: UUID,
+    document_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(_flexible_project_reader),
+):
+    """Serve a document inline for in-browser viewing (PDF, images). Auth via Bearer or ?token=."""
+    from modules.auth.models import UserRole
+
+    doc = await db.get(Document, document_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if user.role == UserRole.buyer and doc.status != DocumentStatus.approved:
+        raise HTTPException(status_code=403, detail="Buyers can only access approved documents")
+
+    import os
+    if not os.path.exists(doc.storage_path):
+        raise HTTPException(status_code=404, detail="File not found on disk")
+
+    with open(doc.storage_path, "rb") as f:
+        content = f.read()
+
+    return Response(
+        content=content,
+        media_type=doc.mime_type,
+        headers={
+            "Content-Disposition": f'inline; filename="{doc.original_filename}"',
+        },
     )
 
 
@@ -448,14 +538,19 @@ async def search_documents(
     Uses PostgreSQL tsvector/tsquery via document_chunks for post-OCR search.
     Falls back to ILIKE on document_texts if no chunks exist.
     """
+    from modules.auth.models import UserRole
+
     if not q or len(q.strip()) < 2:
         raise HTTPException(status_code=400, detail="Search query must be at least 2 characters")
 
     query_clean = q.strip()
 
+    # Buyers can only search approved documents
+    status_filter = "AND d.status = 'approved'" if user.role == UserRole.buyer else ""
+
     # Try FTS via document_chunks first (GIN-indexed)
     from modules.agent.models import DocumentChunk
-    fts_query = text("""
+    fts_query = text(f"""
         SELECT DISTINCT d.id AS document_id, d.name AS document_name, d.workstream,
                ts_headline('english', dc.chunk_text, plainto_tsquery('english', :q),
                            'MaxWords=40, MinWords=20, StartSel=**, StopSel=**') AS snippet,
@@ -464,6 +559,7 @@ async def search_documents(
         JOIN documents d ON dc.document_id = d.id
         WHERE d.project_id = :project_id
           AND dc.search_vector @@ plainto_tsquery('english', :q)
+          {status_filter}
         ORDER BY rank DESC
         LIMIT 50
     """)
@@ -484,7 +580,7 @@ async def search_documents(
         ]
 
     # Fallback: ILIKE search on document_texts
-    fallback_query = text("""
+    fallback_query = text(f"""
         SELECT d.id AS document_id, d.name AS document_name, d.workstream,
                SUBSTRING(dt.content FROM 1 FOR 200) AS snippet,
                0.5 AS rank
@@ -492,6 +588,7 @@ async def search_documents(
         JOIN documents d ON dt.document_id = d.id
         WHERE d.project_id = :project_id
           AND dt.content ILIKE :pattern
+          {status_filter}
         ORDER BY d.created_at DESC
         LIMIT 50
     """)

@@ -119,8 +119,8 @@ export default function ReportsPage() {
     <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <FileText className="w-7 h-7 text-gold" />
-          <h1 className="text-2xl font-display font-bold text-primary">Reports</h1>
+          <FileText className="w-8 h-8 text-gold" />
+          <h1 className="text-3xl font-display font-bold text-primary">Reports</h1>
         </div>
         {perms.canManageReports && (
           <button className="btn-primary px-4 py-2 flex items-center gap-2" onClick={() => setShowForm(!showForm)}>
@@ -131,8 +131,8 @@ export default function ReportsPage() {
 
       {/* Generate Form */}
       {showForm && perms.canManageReports && (
-        <div className="card p-6 space-y-4">
-          <h2 className="text-lg font-display font-semibold text-primary">New Report</h2>
+        <div className="card p-7 space-y-4">
+          <h2 className="text-xl font-display font-semibold text-primary">New Report</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="label">Report Type</label>
@@ -169,7 +169,7 @@ export default function ReportsPage() {
             </div>
           </div>
           {generateError && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-400 text-base">
               {generateError}
             </div>
           )}
@@ -189,33 +189,33 @@ export default function ReportsPage() {
         return visibleReports?.length ? (
         <div className="space-y-4">
           {visibleReports.map(report => (
-            <div key={report.id} className="card p-6">
+            <div key={report.id} className="card p-7">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
-                  <FileText className={`w-5 h-5 mt-0.5 ${report.is_finalized ? 'text-green-400' : 'text-gold'}`} />
+                  <FileText className={`w-6 h-6 mt-0.5 ${report.is_finalized ? 'text-green-400' : 'text-gold'}`} />
                   <div>
                     <h3 className="text-primary font-medium">{report.title}</h3>
-                    <p className="text-secondary text-sm mt-1">
+                    <p className="text-secondary text-base mt-1">
                       {REPORT_TYPES.find(t => t.value === report.report_type)?.label}
                       {report.workstream && ` · ${report.workstream}`}
-                      {' · '}<span className="uppercase text-xs font-mono">{report.report_format || 'docx'}</span>
+                      {' · '}<span className="uppercase text-sm font-mono">{report.report_format || 'docx'}</span>
                     </p>
-                    <p className="text-secondary/60 text-xs mt-1">{new Date(report.created_at).toLocaleString()}</p>
+                    <p className="text-secondary/60 text-sm mt-1">{new Date(report.created_at).toLocaleString()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {/* View button — always available */}
-                  <button className="btn-ghost text-xs px-3 py-1.5 flex items-center gap-1"
+                  <button className="btn-ghost text-sm px-3 py-1.5 flex items-center gap-1"
                     onClick={() => setViewReport(report)}>
                     <Eye className="w-3 h-3" /> View
                   </button>
 
                   {report.is_finalized ? (
                     <>
-                      <span className="flex items-center gap-1 text-green-400 text-xs">
+                      <span className="flex items-center gap-1 text-green-400 text-sm">
                         <Lock className="w-3 h-3" /> Finalized
                       </span>
-                      <button className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
+                      <button className="btn-primary text-sm px-3 py-1.5 flex items-center gap-1"
                         onClick={() => handleDownload(report)}>
                         <Download className="w-3 h-3" /> Download
                       </button>
@@ -223,13 +223,13 @@ export default function ReportsPage() {
                   ) : (
                     <>
                       {perms.canManageReports && (
-                        <button className="btn-ghost text-xs px-3 py-1.5 flex items-center gap-1"
+                        <button className="btn-ghost text-sm px-3 py-1.5 flex items-center gap-1"
                           onClick={() => handleEdit(report)}>
                           <Edit3 className="w-3 h-3" /> Edit
                         </button>
                       )}
                       {perms.canManageReports && (
-                        <button className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1"
+                        <button className="btn-primary text-sm px-3 py-1.5 flex items-center gap-1"
                           onClick={() => finalize.mutate(report.id)}
                           disabled={finalize.isPending}>
                           <CheckCircle2 className="w-3 h-3" /> Finalize
@@ -244,9 +244,9 @@ export default function ReportsPage() {
         </div>
       ) : (
         <div className="card p-12 text-center">
-          <FileText className="w-16 h-16 text-secondary/20 mx-auto mb-4" />
-          <h3 className="text-primary font-display text-lg mb-2">No Reports Yet</h3>
-          <p className="text-secondary text-sm">Generate your first report after completing AI analysis.</p>
+          <FileText className="w-20 h-20 text-secondary/20 mx-auto mb-4" />
+          <h3 className="text-primary font-display text-xl mb-2">No Reports Yet</h3>
+          <p className="text-secondary text-base">Generate your first report after completing AI analysis.</p>
         </div>
       );
       })()}
@@ -258,8 +258,8 @@ export default function ReportsPage() {
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b border-canvas-border">
               <div>
-                <h2 className="text-lg font-display font-semibold text-primary">{viewReport.title}</h2>
-                <p className="text-secondary text-xs mt-1">
+                <h2 className="text-xl font-display font-semibold text-primary">{viewReport.title}</h2>
+                <p className="text-secondary text-sm mt-1">
                   {REPORT_TYPES.find(t => t.value === viewReport.report_type)?.label}
                   {viewReport.workstream && ` · ${viewReport.workstream}`}
                 </p>
@@ -282,19 +282,19 @@ export default function ReportsPage() {
                   <div className="space-y-5">
                     {Object.entries(content).map(([key, value]) => (
                       <div key={key}>
-                        <h3 className="text-gold font-medium text-sm mb-2 border-b border-canvas-border/30 pb-1">{key}</h3>
+                        <h3 className="text-gold font-medium text-base mb-2 border-b border-canvas-border/30 pb-1">{key}</h3>
                         {typeof value === 'string' ? (
-                          <p className="text-secondary text-sm whitespace-pre-wrap">{value}</p>
+                          <p className="text-secondary text-base whitespace-pre-wrap">{value}</p>
                         ) : Array.isArray(value) ? (
                           <div className="space-y-3 ml-1">
                             {value.map((item: any, idx: number) =>
                               typeof item === 'object' && item !== null ? (
                                 <div key={idx} className="rounded-lg border border-canvas-border/40 p-3 bg-surface/20">
                                   {item.Title && (
-                                    <p className="text-primary text-sm font-medium">{item.Title}</p>
+                                    <p className="text-primary text-base font-medium">{item.Title}</p>
                                   )}
                                   {item.Severity && (
-                                    <span className={`inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+                                    <span className={`inline-block mt-1 text-sm font-medium px-2 py-0.5 rounded-full ${
                                       item.Severity === 'CRITICAL' ? 'bg-red-500/15 text-red-400' :
                                       item.Severity === 'HIGH' ? 'bg-orange-500/15 text-orange-400' :
                                       item.Severity === 'MEDIUM' ? 'bg-yellow-500/15 text-yellow-400' :
@@ -302,34 +302,34 @@ export default function ReportsPage() {
                                     }`}>{item.Severity}</span>
                                   )}
                                   {item.Category && (
-                                    <span className="inline-block mt-1 ml-2 text-xs text-secondary/70 px-2 py-0.5 rounded-full bg-surface">{item.Category}</span>
+                                    <span className="inline-block mt-1 ml-2 text-sm text-secondary/70 px-2 py-0.5 rounded-full bg-surface">{item.Category}</span>
                                   )}
                                   {item.Workstream && (
-                                    <span className="inline-block mt-1 ml-2 text-xs text-secondary/70 px-2 py-0.5 rounded-full bg-surface">{item.Workstream}</span>
+                                    <span className="inline-block mt-1 ml-2 text-sm text-secondary/70 px-2 py-0.5 rounded-full bg-surface">{item.Workstream}</span>
                                   )}
                                   {item.Description && (
-                                    <p className="text-secondary text-xs mt-2 leading-relaxed">{item.Description}</p>
+                                    <p className="text-secondary text-sm mt-2 leading-relaxed">{item.Description}</p>
                                   )}
                                   {item.Source && item.Source !== '—' && (
-                                    <p className="text-secondary/50 text-xs mt-1 italic">Source: {item.Source}</p>
+                                    <p className="text-secondary/50 text-sm mt-1 italic">Source: {item.Source}</p>
                                   )}
                                 </div>
                               ) : (
-                                <p key={idx} className="text-secondary text-sm">{String(item)}</p>
+                                <p key={idx} className="text-secondary text-base">{String(item)}</p>
                               )
                             )}
                           </div>
                         ) : typeof value === 'object' && value !== null ? (
                           <div className="space-y-1 ml-1">
                             {Object.entries(value).map(([k, v]) => (
-                              <div key={k} className="flex items-center gap-2 text-sm">
+                              <div key={k} className="flex items-center gap-2 text-base">
                                 <span className="text-secondary/70 capitalize">{k}:</span>
                                 <span className="text-primary font-medium">{String(v)}</span>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <p className="text-secondary text-sm whitespace-pre-wrap">{String(value)}</p>
+                          <p className="text-secondary text-base whitespace-pre-wrap">{String(value)}</p>
                         )}
                       </div>
                     ))}
@@ -337,7 +337,7 @@ export default function ReportsPage() {
                 );
               })()}
             </div>
-            <div className="p-4 border-t border-canvas-border text-xs text-secondary/60 italic">
+            <div className="p-5 border-t border-canvas-border text-sm text-secondary/60 italic">
               Notice: AI-generated content may be inaccurate. Human review is required before distribution.
             </div>
           </div>
@@ -351,8 +351,8 @@ export default function ReportsPage() {
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b border-canvas-border">
               <div>
-                <h2 className="text-lg font-display font-semibold text-primary">Edit: {editReport.title}</h2>
-                <p className="text-secondary text-xs mt-1">Edit the report content below. Use JSON format for structured content, or plain text.</p>
+                <h2 className="text-xl font-display font-semibold text-primary">Edit: {editReport.title}</h2>
+                <p className="text-secondary text-sm mt-1">Edit the report content below. Use JSON format for structured content, or plain text.</p>
               </div>
               <button onClick={() => setEditReport(null)} className="text-secondary hover:text-primary">
                 <X className="w-5 h-5" />
@@ -360,14 +360,14 @@ export default function ReportsPage() {
             </div>
             <div className="p-5 flex-1 overflow-y-auto">
               <textarea
-                className="input w-full h-80 font-mono text-sm resize-none"
+                className="input w-full h-80 font-mono text-base resize-none"
                 value={editText}
                 onChange={e => setEditText(e.target.value)}
               />
             </div>
-            <div className="p-4 border-t border-canvas-border flex justify-end gap-3">
-              <button className="btn-ghost px-4 py-2 text-sm" onClick={() => setEditReport(null)}>Cancel</button>
-              <button className="btn-primary px-4 py-2 text-sm flex items-center gap-2"
+            <div className="p-5 border-t border-canvas-border flex justify-end gap-3">
+              <button className="btn-ghost px-4 py-2 text-base" onClick={() => setEditReport(null)}>Cancel</button>
+              <button className="btn-primary px-4 py-2 text-base flex items-center gap-2"
                 onClick={() => saveEdit.mutate()}
                 disabled={saveEdit.isPending}>
                 <Save className="w-4 h-4" />
@@ -379,7 +379,7 @@ export default function ReportsPage() {
       )}
 
       {/* AI Disclaimer */}
-      <div className="text-xs text-secondary/60 italic border-t border-canvas-border/30 pt-4">
+      <div className="text-sm text-secondary/60 italic border-t border-canvas-border/30 pt-4">
         Notice: AI-generated report content may be inaccurate, incomplete, or misleading.
         All reports require human review before distribution. This tool does not replace qualified advisory services.
       </div>

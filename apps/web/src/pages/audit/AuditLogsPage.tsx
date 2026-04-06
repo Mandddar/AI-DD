@@ -36,14 +36,14 @@ export default function AuditLogsPage() {
   const hasMore = (logs?.length ?? 0) === PAGE_SIZE;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       <div className="flex items-center gap-3">
-        <Shield className="w-7 h-7 text-gold" />
-        <h1 className="text-2xl font-display font-bold text-primary">Audit Trail</h1>
+        <Shield className="w-8 h-8 text-gold" />
+        <h1 className="text-3xl font-display font-bold text-primary">Audit Trail</h1>
       </div>
 
       {/* Filters */}
-      <div className="card p-4 flex flex-wrap gap-4 items-end">
+      <div className="card p-5 flex flex-wrap gap-4 items-end">
         <div>
           <label className="label">Action</label>
           <select className="input text-sm" value={actionFilter} onChange={e => updateAction(e.target.value)}>
@@ -75,7 +75,7 @@ export default function AuditLogsPage() {
 
         {/* Pagination controls */}
         <div className="ml-auto flex items-center gap-3">
-          <span className="text-secondary text-xs">
+          <span className="text-secondary text-sm">
             Page {page + 1} {logs ? `(${logs.length} entries)` : ''}
           </span>
           <button
@@ -104,32 +104,32 @@ export default function AuditLogsPage() {
         ) : logs?.length ? (
           <div className="divide-y divide-canvas-border/50">
             {logs.map(log => (
-              <div key={log.id} className="p-4 hover:bg-surface/30 transition-colors">
+              <div key={log.id} className="p-5 hover:bg-surface/30 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3">
-                    <Activity className="w-4 h-4 text-gold mt-1 flex-shrink-0" />
+                    <Activity className="w-5 h-5 text-gold mt-1 flex-shrink-0" />
                     <div>
-                      <p className="text-primary text-sm">
+                      <p className="text-primary text-base">
                         <span className="font-mono text-gold/80">{log.action}</span>
                         {log.resource_type && (
                           <span className="text-secondary ml-2">on {log.resource_type}</span>
                         )}
                       </p>
                       {log.description && (
-                        <p className="text-secondary text-xs mt-1">{log.description}</p>
+                        <p className="text-secondary text-sm mt-1">{log.description}</p>
                       )}
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-secondary/60">
+                      <div className="flex items-center gap-3 mt-1.5 text-sm text-text-secondary">
                         {log.user_email && (
                           <span className="flex items-center gap-1">
-                            <User className="w-3 h-3" /> {log.user_email}
+                            <User className="w-4 h-4" /> {log.user_email}
                           </span>
                         )}
                         {log.ip_address && <span>IP: {log.ip_address}</span>}
                       </div>
                     </div>
                   </div>
-                  <span className="text-xs text-secondary/60 flex items-center gap-1 flex-shrink-0">
-                    <Clock className="w-3 h-3" />
+                  <span className="text-sm text-text-secondary flex items-center gap-1 flex-shrink-0">
+                    <Clock className="w-4 h-4" />
                     {new Date(log.created_at).toLocaleString()}
                   </span>
                 </div>
@@ -138,16 +138,16 @@ export default function AuditLogsPage() {
           </div>
         ) : (
           <div className="p-12 text-center">
-            <Shield className="w-16 h-16 text-secondary/20 mx-auto mb-4" />
-            <h3 className="text-primary font-display text-lg mb-2">No Audit Logs</h3>
-            <p className="text-secondary text-sm">
+            <Shield className="w-20 h-20 text-secondary/20 mx-auto mb-4" />
+            <h3 className="text-primary font-display text-xl mb-2">No Audit Logs</h3>
+            <p className="text-secondary text-base">
               {page > 0 ? 'No more entries on this page.' : 'Audit entries will appear here as users interact with the platform.'}
             </p>
           </div>
         )}
       </div>
 
-      <p className="text-xs text-secondary/40 italic">
+      <p className="text-sm text-secondary/40 italic">
         Audit logs are tamper-proof — entries can never be edited or deleted, not even by the admin.
       </p>
     </div>

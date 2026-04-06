@@ -89,12 +89,12 @@ export default function PlanningPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="flex items-center gap-3">
-        <ClipboardList className="w-7 h-7 text-gold" />
-        <h1 className="text-2xl font-display font-bold text-primary">Audit Planning</h1>
+        <ClipboardList className="w-8 h-8 text-gold" />
+        <h1 className="text-3xl font-display font-bold text-primary">Audit Planning</h1>
       </div>
 
       {/* Phase Stepper */}
-      <div className="card p-6">
+      <div className="card p-7">
         <div className="flex items-center justify-between">
           {PHASES.map((phase, idx) => {
             const Icon = phase.icon;
@@ -107,7 +107,7 @@ export default function PlanningPage() {
                   isCompleted ? 'text-green-400' : 'text-secondary'
                 }`}>
                   <Icon className="w-4 h-4" />
-                  <span className="text-sm font-medium hidden lg:inline">{phase.label}</span>
+                  <span className="text-base font-medium hidden lg:inline">{phase.label}</span>
                 </div>
                 {idx < PHASES.length - 1 && (
                   <ChevronRight className="w-4 h-4 text-secondary/40 flex-shrink-0" />
@@ -120,9 +120,9 @@ export default function PlanningPage() {
 
       {/* No Plan Yet — Show Phase 1 Form (advisors only) or read-only message */}
       {!plan && perms.canManagePlanning && (
-        <div className="card p-6 space-y-6">
-          <h2 className="text-lg font-display font-semibold text-primary">Phase 1 — Basic Company Data</h2>
-          <p className="text-secondary text-sm">Enter the target company's basic information to begin the audit planning process.</p>
+        <div className="card p-7 space-y-6">
+          <h2 className="text-xl font-display font-semibold text-primary">Phase 1 — Basic Company Data</h2>
+          <p className="text-secondary text-base">Enter the target company's basic information to begin the audit planning process.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label">Company Name *</label>
@@ -175,18 +175,18 @@ export default function PlanningPage() {
         </div>
       )}
       {!plan && !perms.canManagePlanning && (
-        <div className="card p-6 text-center">
-          <ClipboardList className="w-12 h-12 text-secondary/30 mx-auto mb-3" />
+        <div className="card p-7 text-center">
+          <ClipboardList className="w-14 h-14 text-secondary/30 mx-auto mb-3" />
           <p className="text-secondary">No audit plan has been created yet.</p>
-          <p className="text-secondary/60 text-sm mt-1">An advisor will set up the planning process.</p>
+          <p className="text-secondary/60 text-base mt-1">An advisor will set up the planning process.</p>
         </div>
       )}
 
       {/* Phase 1 complete but stuck (legacy plans) — show advance button */}
       {plan?.current_phase === 'basic_data' && (
-        <div className="card p-6 space-y-4">
-          <h2 className="text-lg font-display font-semibold text-primary">Phase 1 — Basic Data Submitted</h2>
-          <p className="text-secondary text-sm">Company data has been recorded. Advance to AI Risk Analysis.</p>
+        <div className="card p-7 space-y-4">
+          <h2 className="text-xl font-display font-semibold text-primary">Phase 1 — Basic Data Submitted</h2>
+          <p className="text-secondary text-base">Company data has been recorded. Advance to AI Risk Analysis.</p>
           {perms.canManagePlanning && (
             <button className="btn-primary px-6 py-2" onClick={() => advancePhase.mutate()}
               disabled={advancePhase.isPending}>
@@ -198,22 +198,22 @@ export default function PlanningPage() {
 
       {/* Phase 2 — Risk Analysis */}
       {plan?.current_phase === 'risk_analysis' && (
-        <div className="card p-6 space-y-4">
-          <h2 className="text-lg font-display font-semibold text-primary">Phase 2 — AI Risk Analysis</h2>
-          <p className="text-secondary text-sm">AI-derived risk areas based on company profile.</p>
+        <div className="card p-7 space-y-4">
+          <h2 className="text-xl font-display font-semibold text-primary">Phase 2 — AI Risk Analysis</h2>
+          <p className="text-secondary text-base">AI-derived risk areas based on company profile.</p>
           {plan.risk_analysis?.length ? (
             <div className="space-y-3">
               {plan.risk_analysis.map((risk: any, i: number) => (
                 <div key={i} className="bg-surface p-4 rounded-lg border border-canvas-border">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-primary">{risk.risk_area || risk.title}</span>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
+                    <span className={`text-sm px-2 py-1 rounded-full ${
                       risk.severity === 'high' ? 'bg-risk-high/10 text-risk-high' :
                       risk.severity === 'medium' ? 'bg-risk-medium/10 text-risk-medium' :
                       'bg-risk-low/10 text-risk-low'
                     }`}>{risk.severity}</span>
                   </div>
-                  <p className="text-secondary text-sm">{risk.description}</p>
+                  <p className="text-secondary text-base">{risk.description}</p>
                 </div>
               ))}
             </div>
@@ -231,15 +231,15 @@ export default function PlanningPage() {
 
       {/* Phase 3 — Interactive Dialog */}
       {plan?.current_phase === 'dialog' && (
-        <div className="card p-6 space-y-4">
-          <h2 className="text-lg font-display font-semibold text-primary">Phase 3 — Interactive Dialog</h2>
-          <p className="text-secondary text-sm">AI asks targeted follow-up questions based on the risk analysis.</p>
+        <div className="card p-7 space-y-4">
+          <h2 className="text-xl font-display font-semibold text-primary">Phase 3 — Interactive Dialog</h2>
+          <p className="text-secondary text-base">AI asks targeted follow-up questions based on the risk analysis.</p>
           {plan.dialog_history?.length ? (
             <div className="space-y-3">
               {plan.dialog_history.map((item: any, i: number) => (
                 <div key={i} className="bg-surface p-4 rounded-lg border border-canvas-border">
-                  <p className="text-gold text-sm font-medium mb-1">Q: {item.question}</p>
-                  <p className="text-primary text-sm">A: {item.answer || '—'}</p>
+                  <p className="text-gold text-base font-medium mb-1">Q: {item.question}</p>
+                  <p className="text-primary text-base">A: {item.answer || '—'}</p>
                 </div>
               ))}
             </div>
@@ -257,11 +257,11 @@ export default function PlanningPage() {
 
       {/* Phase 4 — Audit Plan Approval */}
       {plan?.current_phase === 'plan_approval' && (
-        <div className="card p-6 space-y-4">
-          <h2 className="text-lg font-display font-semibold text-primary">Phase 4 — Audit Plan Approval</h2>
-          <p className="text-secondary text-sm">Review the generated audit plan. Specialized agents will only begin work after your approval.</p>
+        <div className="card p-7 space-y-4">
+          <h2 className="text-xl font-display font-semibold text-primary">Phase 4 — Audit Plan Approval</h2>
+          <p className="text-secondary text-base">Review the generated audit plan. Specialized agents will only begin work after your approval.</p>
           {plan.audit_plan_content ? (
-            <pre className="bg-surface p-4 rounded-lg border border-canvas-border text-secondary text-sm overflow-auto max-h-96">
+            <pre className="bg-surface p-4 rounded-lg border border-canvas-border text-secondary text-base overflow-auto max-h-96">
               {JSON.stringify(plan.audit_plan_content, null, 2)}
             </pre>
           ) : (
@@ -280,12 +280,12 @@ export default function PlanningPage() {
 
       {/* Phase 5 — Request List */}
       {plan?.current_phase === 'request_list' && (
-        <div className="card p-6 space-y-4">
-          <h2 className="text-lg font-display font-semibold text-primary">Phase 5 — Request List</h2>
-          <p className="text-secondary text-sm">Due diligence request list. Update status and priority as documents are received.</p>
+        <div className="card p-7 space-y-4">
+          <h2 className="text-xl font-display font-semibold text-primary">Phase 5 — Request List</h2>
+          <p className="text-secondary text-base">Due diligence request list. Update status and priority as documents are received.</p>
           {requestItems?.length ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-base">
                 <thead>
                   <tr className="border-b border-canvas-border text-left">
                     <th className="p-3 text-secondary font-medium">#</th>
@@ -305,7 +305,7 @@ export default function PlanningPage() {
                       <td className="p-3 text-primary">{item.audit_field}</td>
                       <td className="p-3 text-primary max-w-xs truncate">{item.question}</td>
                       <td className="p-3">
-                        <select className="input text-xs py-1 px-2" value={item.assigned_to || ''}
+                        <select className="input text-sm py-1 px-2" value={item.assigned_to || ''}
                           disabled={!perms.canManagePlanning}
                           onChange={e => updateItem.mutate({ itemId: item.id, data: { assigned_to: e.target.value || null } as any })}>
                           <option value="">Unassigned</option>
@@ -315,7 +315,7 @@ export default function PlanningPage() {
                         </select>
                       </td>
                       <td className="p-3">
-                        <select className="input text-xs py-1 px-2" value={item.status}
+                        <select className="input text-sm py-1 px-2" value={item.status}
                           disabled={!perms.canUpdateRequestList}
                           onChange={e => {
                             const val = e.target.value;
@@ -333,7 +333,7 @@ export default function PlanningPage() {
                         </select>
                       </td>
                       <td className="p-3">
-                        <select className="input text-xs py-1 px-2" value={item.priority}
+                        <select className="input text-sm py-1 px-2" value={item.priority}
                           disabled={!perms.canUpdateRequestList}
                           onChange={e => updateItem.mutate({ itemId: item.id, data: { priority: e.target.value as any } })}>
                           <option value="high">High</option>
@@ -359,15 +359,15 @@ export default function PlanningPage() {
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b border-canvas-border">
               <div>
-                <h2 className="text-lg font-display font-semibold text-primary">Compose Query</h2>
-                <p className="text-secondary text-xs mt-1">Send a query to the seller regarding this request item.</p>
+                <h2 className="text-xl font-display font-semibold text-primary">Compose Query</h2>
+                <p className="text-secondary text-sm mt-1">Send a query to the seller regarding this request item.</p>
               </div>
               <button onClick={() => setQueryDialog(null)} className="text-secondary hover:text-primary"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
               <div>
                 <label className="label">Request Item</label>
-                <p className="text-primary text-sm bg-surface rounded-lg p-3 border border-canvas-border">{queryDialog.question}</p>
+                <p className="text-primary text-base bg-surface rounded-lg p-3 border border-canvas-border">{queryDialog.question}</p>
               </div>
               <div>
                 <label className="label">Query Message</label>
@@ -380,9 +380,9 @@ export default function PlanningPage() {
               </div>
             </div>
             <div className="p-4 border-t border-canvas-border flex justify-end gap-3">
-              <button className="btn-ghost px-4 py-2 text-sm" onClick={() => setQueryDialog(null)}>Cancel</button>
+              <button className="btn-ghost px-4 py-2 text-base" onClick={() => setQueryDialog(null)}>Cancel</button>
               <button
-                className="btn-primary px-4 py-2 text-sm flex items-center gap-2"
+                className="btn-primary px-4 py-2 text-base flex items-center gap-2"
                 disabled={!queryText.trim()}
                 onClick={() => {
                   updateItem.mutate(
@@ -400,9 +400,9 @@ export default function PlanningPage() {
 
       {/* Basic Data Summary (always shown if plan exists) */}
       {plan?.basic_data && plan.current_phase !== 'basic_data' && (
-        <div className="card p-6">
-          <h3 className="text-sm font-display font-semibold text-secondary mb-3">Company Profile</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div className="card p-7">
+          <h3 className="text-base font-display font-semibold text-secondary mb-3">Company Profile</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-base">
             <div><span className="text-secondary">Company:</span> <span className="text-primary ml-1">{plan.basic_data.company_name}</span></div>
             <div><span className="text-secondary">Legal Form:</span> <span className="text-primary ml-1">{plan.basic_data.legal_form}</span></div>
             <div><span className="text-secondary">Industry:</span> <span className="text-primary ml-1">{plan.basic_data.industry}</span></div>

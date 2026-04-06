@@ -40,10 +40,8 @@ async def get_audit_logs(
 
     query = select(AuditLog).order_by(AuditLog.created_at.desc())
 
-    # Lead advisors only see their own logs
-    if user.role == UserRole.lead_advisor:
-        query = query.where(AuditLog.user_id == user.id)
-    elif user_id:
+    # Both admin and lead_advisor see all logs; optionally filter by user_id
+    if user_id:
         query = query.where(AuditLog.user_id == user_id)
 
     if action:
@@ -78,9 +76,6 @@ async def get_project_audit_logs(
         .order_by(AuditLog.created_at.desc())
         .limit(limit)
     )
-    # Lead advisors only see their own logs
-    if user.role == UserRole.lead_advisor:
-        query = query.where(AuditLog.user_id == user.id)
 
     result = await db.execute(query)
     return list(result.scalars().all())

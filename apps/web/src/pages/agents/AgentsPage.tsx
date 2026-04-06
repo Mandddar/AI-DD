@@ -18,10 +18,10 @@ const WORKSTREAM_OPTIONS = [
 
 function statusIcon(status: RunSummary["status"]) {
   const map = {
-    pending: <Clock size={13} className="text-text-muted" />,
-    running: <Loader2 size={13} className="animate-spin text-gold" />,
-    completed: <CheckCircle size={13} className="text-risk-low" />,
-    failed: <AlertCircle size={13} className="text-risk-high" />,
+    pending: <Clock size={15} className="text-text-muted" />,
+    running: <Loader2 size={15} className="animate-spin text-gold" />,
+    completed: <CheckCircle size={15} className="text-risk-low" />,
+    failed: <AlertCircle size={15} className="text-risk-high" />,
   };
   return map[status];
 }
@@ -35,7 +35,7 @@ function statusLabel(status: RunSummary["status"]) {
   };
   const { label, cls } = map[status];
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium", cls)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-sm font-medium", cls)}>
       {statusIcon(status)} {label}
     </span>
   );
@@ -66,27 +66,27 @@ export function AgentsPage() {
     setSelected((prev) => prev.includes(ws) ? prev.filter((w) => w !== ws) : [...prev, ws]);
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="font-display text-2xl text-text-primary">AI Analysis</h1>
-          <p className="mt-1 text-sm text-text-secondary">
+          <h1 className="font-display text-3xl text-text-primary">AI Analysis</h1>
+          <p className="mt-1 text-base text-text-secondary">
             Run AI agents to analyse uploaded documents and surface due diligence findings.
           </p>
         </div>
 
         {/* Trigger panel */}
         {perms.canRunAnalysis && (
-          <div className="card p-4 w-72 space-y-3 shrink-0">
-            <p className="text-xs font-medium text-text-secondary uppercase tracking-wider">New Run</p>
+          <div className="card p-5 w-72 space-y-3 shrink-0">
+            <p className="text-sm font-medium text-text-secondary uppercase tracking-wider">New Run</p>
             <div className="flex flex-wrap gap-1.5">
               {WORKSTREAM_OPTIONS.map((ws) => (
                 <button
                   key={ws.value}
                   onClick={() => toggle(ws.value)}
                   className={cn(
-                    "rounded px-2.5 py-1 text-xs font-medium transition-colors",
+                    "rounded px-2.5 py-1 text-sm font-medium transition-colors",
                     selected.includes(ws.value)
                       ? "bg-gold text-canvas"
                       : "bg-surface text-text-secondary hover:bg-canvas-border"
@@ -99,11 +99,11 @@ export function AgentsPage() {
             <button
               onClick={() => triggerMutation.mutate()}
               disabled={triggerMutation.isPending || selected.length === 0}
-              className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
+              className="btn-primary w-full flex items-center justify-center gap-2 text-base"
             >
               {triggerMutation.isPending
-                ? <><Loader2 size={14} className="animate-spin" /> Starting…</>
-                : <><Play size={14} /> Run Analysis</>}
+                ? <><Loader2 size={16} className="animate-spin" /> Starting…</>
+                : <><Play size={16} /> Run Analysis</>}
             </button>
           </div>
         )}
@@ -111,8 +111,8 @@ export function AgentsPage() {
 
       {/* Cumulative behavior notice */}
       {runs.filter(r => r.status === "completed").length > 1 && (
-        <div className="card p-3 flex items-center gap-2 text-xs text-text-secondary border-gold/20 bg-gold/5">
-          <AlertTriangle size={14} className="text-gold shrink-0" />
+        <div className="card p-3 flex items-center gap-2 text-sm text-text-secondary border-gold/20 bg-gold/5">
+          <AlertTriangle size={16} className="text-gold shrink-0" />
           <span>
             Findings accumulate across runs. Each new run adds to existing findings rather than replacing them.
             Total findings shown per run reflect all findings generated up to that point.
@@ -127,9 +127,9 @@ export function AgentsPage() {
         </div>
       ) : runs.length === 0 ? (
         <div className="card p-12 text-center">
-          <FileSearch size={40} className="mx-auto mb-3 text-text-muted" />
-          <p className="text-sm font-medium text-text-secondary">No analysis runs yet</p>
-          <p className="mt-1 text-xs text-text-muted">Select workstreams above and click Run Analysis to start.</p>
+          <FileSearch size={48} className="mx-auto mb-3 text-text-muted" />
+          <p className="text-base font-medium text-text-secondary">No analysis runs yet</p>
+          <p className="mt-1 text-sm text-text-muted">Select workstreams above and click Run Analysis to start.</p>
         </div>
       ) : (
         <div className="card divide-y divide-canvas-border">
@@ -140,12 +140,12 @@ export function AgentsPage() {
               className="flex w-full items-center gap-4 px-4 py-3.5 text-left hover:bg-surface/30 transition-colors group"
             >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-gold/10">
-                <Brain size={16} className="text-gold" />
+                <Brain size={18} className="text-gold" />
               </div>
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-text-primary">
+                  <p className="text-base font-medium text-text-primary">
                     Run {new Date(run.created_at).toLocaleDateString("en-GB", {
                       day: "2-digit", month: "short", year: "numeric",
                       hour: "2-digit", minute: "2-digit",
@@ -153,7 +153,7 @@ export function AgentsPage() {
                   </p>
                   {statusLabel(run.status)}
                 </div>
-                <p className="mt-0.5 text-xs text-text-muted">
+                <p className="mt-0.5 text-sm text-text-muted">
                   {run.workstreams.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" · ")}
                   {run.status === "running"
                     ? ` · Embedding ${run.processed_documents}/${run.total_documents} docs`
@@ -171,14 +171,14 @@ export function AgentsPage() {
                   })()}
                 </p>
                 {run.status === "completed" && run.total_documents === 0 && (
-                  <p className="mt-1 flex items-center gap-1 text-xs text-yellow-500">
-                    <AlertTriangle size={11} />
+                  <p className="mt-1 flex items-center gap-1 text-sm text-yellow-500">
+                    <AlertTriangle size={13} />
                     No documents were uploaded — findings are based on planning data only
                   </p>
                 )}
               </div>
 
-              <ChevronRight size={15} className="text-text-muted group-hover:text-text-secondary transition-colors shrink-0" />
+              <ChevronRight size={17} className="text-text-muted group-hover:text-text-secondary transition-colors shrink-0" />
             </button>
           ))}
         </div>

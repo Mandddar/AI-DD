@@ -41,10 +41,10 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="card w-full max-w-lg p-6 animate-slide-in max-h-[90vh] overflow-y-auto">
-        <h2 className="mb-5 font-display text-lg text-text-primary">New Deal</h2>
+      <div className="card w-full max-w-lg p-7 animate-slide-in max-h-[90vh] overflow-y-auto">
+        <h2 className="mb-5 font-display text-xl text-text-primary">New Deal</h2>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {field("name", "Deal Name", "text", "e.g. Acquisition of MediTech GmbH")}
           {field("company_name", "Target Company", "text", "Legal company name")}
 
@@ -77,12 +77,12 @@ function CreateProjectModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {mutation.error && (
-          <p className="mt-3 rounded bg-risk-high/10 px-3 py-2 text-xs text-risk-high">
+          <p className="mt-3 rounded bg-risk-high/10 px-3 py-2 text-sm text-risk-high">
             {(mutation.error as any).response?.data?.detail ?? "Something went wrong"}
           </p>
         )}
 
-        <div className="mt-5 flex justify-end gap-2">
+        <div className="mt-5 flex justify-end gap-3">
           <button onClick={onClose} className="btn-ghost">Cancel</button>
           <button
             onClick={() => mutation.mutate(form)}
@@ -106,11 +106,11 @@ export function ProjectsPage() {
   });
 
   return (
-    <div className="p-6 space-y-5 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl text-text-primary">Deals</h1>
-          <p className="mt-1 text-sm text-text-secondary">{projects.length} deal{projects.length !== 1 ? "s" : ""}</p>
+          <h1 className="font-display text-3xl text-text-primary">Deals</h1>
+          <p className="mt-1 text-base text-text-secondary">{projects.length} deal{projects.length !== 1 ? "s" : ""}</p>
         </div>
         {perms.canCreateProject && (
           <button onClick={() => setShowCreate(true)} className="btn-primary">
@@ -122,15 +122,15 @@ export function ProjectsPage() {
 
       {isLoading ? (
         <div className="card p-8 text-center">
-          <p className="text-sm text-text-muted">Loading deals…</p>
+          <p className="text-base text-text-muted">Loading deals…</p>
         </div>
       ) : projects.length === 0 ? (
         <div className="card p-12 text-center">
           <FolderOpen size={40} className="mx-auto mb-4 text-text-muted" />
-          <p className="text-sm font-medium text-text-primary">
+          <p className="text-base font-medium text-text-primary">
             {perms.canCreateProject ? "No deals yet" : "No deals assigned to you yet"}
           </p>
-          <p className="mt-1 text-xs text-text-muted">
+          <p className="mt-1 text-sm text-text-muted">
             {perms.canCreateProject
               ? "Create your first deal to get started"
               : "Your advisor will assign you to a deal when ready."}
@@ -147,15 +147,15 @@ export function ProjectsPage() {
             <Link
               key={project.id}
               to={`/projects/${project.id}/documents`}
-              className="card p-4 flex items-center justify-between hover:shadow-card-hover hover:border-canvas-border/80 transition-all group"
+              className="card p-5 flex items-center justify-between hover:shadow-card-hover hover:border-canvas-border/80 transition-all group"
             >
               <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface group-hover:bg-surface-hover transition-colors">
-                  <Building2 size={18} className="text-text-secondary" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-surface group-hover:bg-surface-hover transition-colors">
+                  <Building2 size={20} className="text-text-secondary" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-text-primary">{project.name}</p>
-                  <p className="text-xs text-text-muted">
+                  <p className="text-base font-semibold text-text-primary">{project.name}</p>
+                  <p className="text-sm text-text-muted">
                     {project.company_name} · {project.legal_form} · {project.industry ?? "—"} ·{" "}
                     {project.deal_type.replace("_", " ")}
                   </p>
@@ -163,10 +163,10 @@ export function ProjectsPage() {
               </div>
               <div className="flex items-center gap-3">
                 {project.registered_office && (
-                  <span className="text-xs text-text-muted">{project.registered_office}</span>
+                  <span className="text-sm text-text-muted">{project.registered_office}</span>
                 )}
                 <span
-                  className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                  className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${
                     project.status === "active"
                       ? "bg-risk-low/10 text-risk-low"
                       : project.status === "completed"

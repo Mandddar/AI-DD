@@ -38,3 +38,20 @@ class VarianceAnalysisOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class FinancialInsightOut(BaseModel):
+    id: UUID
+    project_id: UUID
+    status: str
+    extracted_figures: Optional[list] = None
+    kpis: Optional[list] = None
+    variance_results: Optional[list] = None
+    anomalies: Optional[list] = None
+    summary: Optional[str] = None
+    source_document_ids: Optional[list] = None
+    source_dataset_ids: Optional[list] = None
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}

@@ -48,18 +48,18 @@ export function ForgotPasswordPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas px-6 py-12">
       <div className="w-full max-w-sm animate-fade-in">
-        <Link to="/login" className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-primary transition-colors mb-8">
-          <ArrowLeft size={14} /> Back to login
+        <Link to="/login" className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text-primary transition-colors mb-8">
+          <ArrowLeft size={16} /> Back to login
         </Link>
 
         {step === "request" && (
           <>
             <div className="mb-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30 mb-4">
-                <Mail size={20} className="text-gold" />
+                <Mail size={22} className="text-gold" />
               </div>
-              <h2 className="font-display text-2xl text-text-primary">Reset Password</h2>
-              <p className="mt-1 text-sm text-text-secondary">
+              <h2 className="font-display text-3xl text-text-primary">Reset Password</h2>
+              <p className="mt-1 text-base text-text-secondary">
                 Enter your email address and we'll generate a reset token.
               </p>
             </div>
@@ -76,9 +76,9 @@ export function ForgotPasswordPage() {
                   required
                 />
               </div>
-              {error && <p className="text-xs text-risk-high">{error}</p>}
+              {error && <p className="text-sm text-risk-high">{error}</p>}
               <button type="submit" disabled={loading} className="btn-primary w-full justify-center">
-                {loading ? <Loader2 size={16} className="animate-spin" /> : "Send Reset Token"}
+                {loading ? <Loader2 size={18} className="animate-spin" /> : "Send Reset Token"}
               </button>
             </form>
           </>
@@ -88,10 +88,10 @@ export function ForgotPasswordPage() {
           <>
             <div className="mb-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30 mb-4">
-                <Key size={20} className="text-gold" />
+                <Key size={22} className="text-gold" />
               </div>
-              <h2 className="font-display text-2xl text-text-primary">Enter New Password</h2>
-              <p className="mt-1 text-sm text-text-secondary">
+              <h2 className="font-display text-3xl text-text-primary">Enter New Password</h2>
+              <p className="mt-1 text-base text-text-secondary">
                 {devToken
                   ? "Dev mode: your reset token has been auto-filled below."
                   : "Enter the reset token you received and your new password."}
@@ -102,7 +102,7 @@ export function ForgotPasswordPage() {
               <div>
                 <label className="label">Reset Token</label>
                 <input
-                  className="input w-full font-mono text-xs"
+                  className="input w-full font-mono text-sm"
                   value={token}
                   onChange={(e) => setToken(e.target.value)}
                   required
@@ -120,9 +120,9 @@ export function ForgotPasswordPage() {
                   minLength={8}
                 />
               </div>
-              {error && <p className="text-xs text-risk-high">{error}</p>}
+              {error && <p className="text-sm text-risk-high">{error}</p>}
               <button type="submit" disabled={loading || newPassword.length < 8} className="btn-primary w-full justify-center">
-                {loading ? <Loader2 size={16} className="animate-spin" /> : "Reset Password"}
+                {loading ? <Loader2 size={18} className="animate-spin" /> : "Reset Password"}
               </button>
             </form>
           </>
@@ -131,10 +131,10 @@ export function ForgotPasswordPage() {
         {step === "done" && (
           <div className="text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-risk-low/10 ring-1 ring-risk-low/20">
-              <CheckCircle size={24} className="text-risk-low" />
+              <CheckCircle size={28} className="text-risk-low" />
             </div>
-            <h2 className="font-display text-2xl text-text-primary">Password Reset</h2>
-            <p className="mt-2 text-sm text-text-secondary">
+            <h2 className="font-display text-3xl text-text-primary">Password Reset</h2>
+            <p className="mt-2 text-base text-text-secondary">
               Your password has been reset successfully. You can now sign in.
             </p>
             <Link to="/login" className="btn-primary inline-flex mt-6 px-6 py-2">

@@ -29,11 +29,11 @@ export function RegisterPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30">
             <span className="font-display text-xl font-semibold text-gold">DD</span>
           </div>
-          <h1 className="font-display text-2xl text-text-primary">Create account</h1>
-          <p className="mt-1 text-sm text-text-muted">AI DD — M&A Due Diligence</p>
+          <h1 className="font-display text-3xl text-text-primary">Create account</h1>
+          <p className="mt-1 text-base text-text-muted">AI DD — M&A Due Diligence</p>
         </div>
 
-        <div className="card p-6">
+        <div className="card p-7">
           <form onSubmit={submit} className="space-y-4">
             <div>
               <label className="label">Full Name</label>
@@ -68,13 +68,13 @@ export function RegisterPage() {
               />
             </div>
             <div>
-              <p className="text-xs text-text-muted mt-1">
+              <p className="text-sm text-text-muted mt-1">
                 Your account will be created with default access. An administrator will assign your role after registration.
               </p>
             </div>
 
             {error && (
-              <p className="rounded bg-risk-high/10 px-3 py-2 text-xs text-risk-high">{error}</p>
+              <p className="rounded bg-risk-high/10 px-3 py-2 text-sm text-risk-high">{error}</p>
             )}
 
             <button type="submit" disabled={loading} className="btn-primary w-full justify-center">
@@ -82,7 +82,7 @@ export function RegisterPage() {
             </button>
           </form>
 
-          <p className="mt-4 text-center text-xs text-text-muted">
+          <p className="mt-4 text-center text-sm text-text-muted">
             Already have an account?{" "}
             <Link to="/login" className="text-gold hover:text-gold-light transition-colors">
               Sign in

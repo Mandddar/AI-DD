@@ -53,6 +53,21 @@ export interface ChartData {
   trends: PeriodComparison[];
 }
 
+export interface FinancialInsight {
+  id: string;
+  project_id: string;
+  status: 'running' | 'completed' | 'failed';
+  extracted_figures: { metric: string; period: string; value: number; currency: string; source: string }[] | null;
+  kpis: FinancialKPI[] | null;
+  variance_results: { metric: string; current: number; prior: number; current_period: string; prior_period: string; variance_pct: number; flag: string }[] | null;
+  anomalies: { question: string; metric: string; severity: string; detail: string }[] | null;
+  summary: string | null;
+  source_document_ids: string[] | null;
+  source_dataset_ids: string[] | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
 export const finance = {
   uploadData: (projectId: string, file: File) => {
     const form = new FormData();
@@ -82,4 +97,14 @@ export const finance = {
 
   getChartData: (projectId: string) =>
     api.get<ChartData>(`/projects/${projectId}/finance/chart-data`).then(r => r.data),
+
+  // AI Document Analysis
+  analyzeDocuments: (projectId: string) =>
+    api.post<FinancialInsight>(`/projects/${projectId}/finance/analyze`).then(r => r.data),
+
+  getInsights: (projectId: string) =>
+    api.get<FinancialInsight[]>(`/projects/${projectId}/finance/insights`).then(r => r.data),
+
+  getLatestInsight: (projectId: string) =>
+    api.get<FinancialInsight>(`/projects/${projectId}/finance/insights/latest`).then(r => r.data),
 };

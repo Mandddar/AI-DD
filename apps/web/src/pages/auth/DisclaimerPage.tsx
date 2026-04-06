@@ -28,15 +28,15 @@ export function DisclaimerPage() {
         <div className="card p-8">
           <div className="mb-6 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold/10 ring-1 ring-gold/30">
-              <ShieldAlert size={20} className="text-gold" />
+              <ShieldAlert size={22} className="text-gold" />
             </div>
             <div>
-              <h1 className="font-display text-lg text-text-primary">AI Disclaimer</h1>
-              <p className="text-xs text-text-muted">Please read and accept before continuing</p>
+              <h1 className="font-display text-xl text-text-primary">AI Disclaimer</h1>
+              <p className="text-sm text-text-muted">Please read and accept before continuing</p>
             </div>
           </div>
 
-          <div className="rounded-lg border border-canvas-border bg-canvas-subtle p-4 text-sm text-text-secondary leading-relaxed space-y-3">
+          <div className="rounded-lg border border-canvas-border bg-canvas-subtle p-5 text-base text-text-secondary leading-relaxed space-y-3">
             <p>
               This system uses <strong className="text-text-primary">Artificial Intelligence</strong> to support the
               due diligence review process.
@@ -63,7 +63,7 @@ export function DisclaimerPage() {
               checked={accepted}
               onChange={(e) => setAccepted(e.target.checked)}
             />
-            <span className="text-sm text-text-secondary">
+            <span className="text-base text-text-secondary">
               I have read and understood the above disclaimer. I accept that AI-generated content requires
               human review and verification before use.
             </span>

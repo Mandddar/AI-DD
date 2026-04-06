@@ -72,8 +72,15 @@ export const documentsApi = {
   delete: (projectId: string, documentId: string) =>
     api.delete(`/projects/${projectId}/documents/${documentId}`),
 
-  downloadUrl: (projectId: string, documentId: string) =>
-    `${api.defaults.baseURL}/projects/${projectId}/documents/${documentId}/download`,
+  downloadUrl: (projectId: string, documentId: string) => {
+    const token = localStorage.getItem("access_token") ?? "";
+    return `${api.defaults.baseURL}/projects/${projectId}/documents/${documentId}/download?token=${encodeURIComponent(token)}`;
+  },
+
+  previewUrl: (projectId: string, documentId: string) => {
+    const token = localStorage.getItem("access_token") ?? "";
+    return `${api.defaults.baseURL}/projects/${projectId}/documents/${documentId}/preview?token=${encodeURIComponent(token)}`;
+  },
 
   // Status update (7-state lifecycle)
   updateStatus: (projectId: string, documentId: string, status: DocumentStatus) =>

@@ -74,3 +74,27 @@ class VarianceAnalysis(Base):
     generated_queries = Column(JSON, nullable=True)  # AI-generated follow-up queries
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class FinancialInsight(Base):
+    """AI-extracted financial analysis from data room documents + uploaded data."""
+    __tablename__ = "financial_insights"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False, index=True)
+    triggered_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+
+    status = Column(String(20), nullable=False, default="running")  # running, completed, failed
+
+    # AI-extracted structured financial data from documents
+    extracted_figures = Column(JSON, nullable=True)  # {revenue, cogs, ebitda, ...} per period
+    kpis = Column(JSON, nullable=True)               # [{name, value, unit, category}, ...]
+    variance_results = Column(JSON, nullable=True)    # [{metric, current, prior, variance_pct, flag}, ...]
+    anomalies = Column(JSON, nullable=True)           # [{question, metric, severity, detail}, ...]
+    summary = Column(Text, nullable=True)             # AI-generated executive summary
+
+    source_document_ids = Column(JSON, nullable=True)  # document UUIDs used
+    source_dataset_ids = Column(JSON, nullable=True)   # financial dataset UUIDs used
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
