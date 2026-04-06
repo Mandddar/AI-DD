@@ -1,48 +1,46 @@
 /** @type {import('tailwindcss').Config} */
+
+// Helper: reference a CSS variable as rgb channels so Tailwind opacity modifiers work
+const c = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+
 export default {
   darkMode: "class",
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        // Deep dark base — luxurious M&A feel
         canvas: {
-          DEFAULT: "#0B0F14",
-          subtle: "#101620",
-          card: "#121821",
-          border: "#1E2A3A",
+          DEFAULT: c("canvas"),
+          subtle: c("canvas-subtle"),
+          card: c("canvas-card"),
+          border: c("canvas-border"),
         },
-        // Elevated surfaces
         surface: {
-          DEFAULT: "#1A2230",
-          hover: "#1F2A3A",
-          active: "#253344",
+          DEFAULT: c("surface"),
+          hover: c("surface-hover"),
+          active: c("surface-active"),
         },
-        // Gold accent — trust, premium, primary CTA
         gold: {
-          DEFAULT: "#C8A96A",
-          light: "#DBBF82",
-          dark: "#A08040",
-          muted: "rgba(200,169,106,0.12)",
+          DEFAULT: c("gold"),
+          light: c("gold-light"),
+          dark: c("gold-dark"),
+          muted: "var(--gold-muted)",
         },
-        // Blue highlight — secondary accent
         highlight: {
-          DEFAULT: "#4A90E2",
-          light: "#6AA8F0",
-          dark: "#3570B8",
-          muted: "rgba(74,144,226,0.12)",
+          DEFAULT: c("highlight"),
+          light: c("highlight-light"),
+          dark: c("highlight-dark"),
+          muted: "var(--highlight-muted)",
         },
-        // Semantic risk colors
         risk: {
-          high: "#E05252",
-          medium: "#E09C3A",
-          low: "#4CAE8A",
+          high: c("risk-high"),
+          medium: c("risk-medium"),
+          low: c("risk-low"),
         },
-        // Text hierarchy
         text: {
-          primary: "#E6EAF0",
-          secondary: "#A0A8B8",
-          muted: "#566278",
+          primary: c("text-primary"),
+          secondary: c("text-secondary"),
+          muted: c("text-muted"),
         },
       },
       fontFamily: {
@@ -51,14 +49,13 @@ export default {
         mono: ["JetBrains Mono", "monospace"],
       },
       fontSize: {
-        // Slightly larger defaults for readability
-        xs: ["0.8125rem", { lineHeight: "1.25rem" }],    // 13px
-        sm: ["0.9375rem", { lineHeight: "1.375rem" }],   // 15px
-        base: ["1.0625rem", { lineHeight: "1.625rem" }], // 17px
-        lg: ["1.1875rem", { lineHeight: "1.75rem" }],    // 19px
-        xl: ["1.3125rem", { lineHeight: "1.875rem" }],   // 21px
-        "2xl": ["1.625rem", { lineHeight: "2rem" }],     // 26px
-        "3xl": ["2rem", { lineHeight: "2.375rem" }],     // 32px
+        xs: ["0.8125rem", { lineHeight: "1.25rem" }],
+        sm: ["0.9375rem", { lineHeight: "1.375rem" }],
+        base: ["1.0625rem", { lineHeight: "1.625rem" }],
+        lg: ["1.1875rem", { lineHeight: "1.75rem" }],
+        xl: ["1.3125rem", { lineHeight: "1.875rem" }],
+        "2xl": ["1.625rem", { lineHeight: "2rem" }],
+        "3xl": ["2rem", { lineHeight: "2.375rem" }],
       },
       borderRadius: {
         sm: "6px",
@@ -69,9 +66,9 @@ export default {
         "2xl": "24px",
       },
       boxShadow: {
-        card: "0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)",
-        "card-hover": "0 8px 24px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.3)",
-        elevated: "0 4px 16px rgba(0,0,0,0.35)",
+        card: "var(--shadow-card)",
+        "card-hover": "var(--shadow-card-hover)",
+        elevated: "var(--shadow-elevated)",
         gold: "0 0 0 1px rgba(200,169,106,0.35)",
         "gold-glow": "0 0 20px rgba(200,169,106,0.15)",
       },
@@ -84,7 +81,7 @@ export default {
       animation: {
         "fade-in": "fadeIn 0.25s ease-out",
         "slide-in": "slideIn 0.3s ease-out",
-        "glow": "glow 2s ease-in-out infinite alternate",
+        glow: "glow 2s ease-in-out infinite alternate",
       },
       keyframes: {
         fadeIn: { from: { opacity: 0 }, to: { opacity: 1 } },

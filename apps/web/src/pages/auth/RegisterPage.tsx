@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authApi } from "../../api/auth";
+import { ThemeToggle } from "../../components/ThemeToggle";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -26,14 +27,19 @@ export function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
       <div className="w-full max-w-sm animate-fade-in">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30">
-            <span className="font-display text-xl font-semibold text-gold">DD</span>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30">
+              <span className="font-display text-xl font-semibold text-gold">DD</span>
+            </div>
           </div>
-          <h1 className="font-display text-3xl text-text-primary">Create account</h1>
+          <h1 className="font-display text-2xl sm:text-3xl text-text-primary">Create account</h1>
           <p className="mt-1 text-base text-text-muted">AI DD — M&A Due Diligence</p>
+          <div className="mt-3 flex justify-center">
+            <ThemeToggle />
+          </div>
         </div>
 
-        <div className="card p-7">
+        <div className="card p-5 sm:p-7">
           <form onSubmit={submit} className="space-y-4">
             <div>
               <label className="label">Full Name</label>

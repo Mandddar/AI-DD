@@ -1,6 +1,20 @@
+# Shared env block for API + Celery
+x-api-env: &api-env
+  DATABASE_URL: postgresql+psycopg://aidd:aidd_dev_pass@db:5432/aidd
+  SECRET_KEY: dev-secret-change-in-prod-32chars!!
+  GROQ_API_KEY: ${GROQ_API_KEY:-}
+  REDIS_URL: redis://redis:6379/0
+  ENVIRONMENT: development
+
+x-api-depends: &api-depends
+  db:
+    condition: service_healthy
+  redis:
+    condition: service_healthy
+
 services:
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: aidd
       POSTGRES_PASSWORD: aidd_dev_pass
@@ -9,12 +23,13 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U aidd"]
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -27,6 +42,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   api:
     build:
@@ -35,53 +51,52 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+psycopg://aidd:aidd_dev_pass@db:5432/aidd
-      SECRET_KEY: dev-secret-change-in-prod-32chars!!
-      GROQ_API_KEY: ${GROQ_API_KEY:-}
-      REDIS_URL: redis://redis:6379/0
-      ENVIRONMENT: development
+      <<: *api-env
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      <<: *api-depends
     volumes:
       - ./apps/api:/app
-      - /app/.venv
+      - /app/.venv          # don't overlay the built .venv
+      - api-uploads:/app/uploads
     command: uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
 
   celery-worker:
     build:
       context: ./apps/api
       dockerfile: ../../infrastructure/docker/api.Dockerfile
     environment:
-      DATABASE_URL: postgresql+psycopg://aidd:aidd_dev_pass@db:5432/aidd
-      SECRET_KEY: dev-secret-change-in-prod-32chars!!
-      GROQ_API_KEY: ${GROQ_API_KEY:-}
-      REDIS_URL: redis://redis:6379/0
-      ENVIRONMENT: development
+      <<: *api-env
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      <<: *api-depends
     volumes:
       - ./apps/api:/app
       - /app/.venv
-    command: uv run celery -A celery_app worker --loglevel=info
+      - api-uploads:/app/uploads
+    command: uv run celery -A celery_app worker --loglevel=info --concurrency=2
+    restart: unless-stopped
 
   web:
     build:
       context: ./apps/web
       dockerfile: ../../infrastructure/docker/web.Dockerfile
+      target: dev
     ports:
       - "5173:5173"
     volumes:
       - ./apps/web:/app
-      - /app/node_modules
+      - /app/node_modules   # don't overlay installed modules
     environment:
       VITE_API_URL: http://localhost:8000
+    restart: unless-stopped
 
 volumes:
   pgdata:
   redisdata:
+  api-uploads:

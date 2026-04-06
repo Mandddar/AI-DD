@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ShieldCheck, FileSearch, BarChart3, Smartphone } from "lucide-react";
 import { authApi } from "../../api/auth";
 import { useAuthStore } from "../../store/auth";
+import { ThemeToggle } from "../../components/ThemeToggle";
 
 const SELLING_POINTS = [
   { icon: FileSearch, text: "Automated document review across all workstreams" },
@@ -29,7 +30,6 @@ export function LoginPage() {
         totp_code: needs2fa ? totpCode : undefined,
       });
 
-      // Check if 2FA is required
       if (tokens.requires_2fa) {
         setNeeds2fa(true);
         setLoading(false);
@@ -50,18 +50,21 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-screen bg-canvas">
-      {/* Left panel — branding */}
-      <div className="hidden lg:flex lg:w-[480px] xl:w-[520px] shrink-0 flex-col justify-between border-r border-canvas-border bg-canvas-subtle p-12">
-        <Link to="/" className="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors text-sm">
-          <ArrowLeft size={14} /> Back to home
-        </Link>
+      {/* Left panel — branding (desktop) */}
+      <div className="hidden lg:flex lg:w-[480px] xl:w-[520px] shrink-0 flex-col justify-between border-r border-canvas-border bg-canvas-subtle p-10 xl:p-12">
+        <div className="flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors text-sm">
+            <ArrowLeft size={14} /> Back to home
+          </Link>
+          <ThemeToggle />
+        </div>
 
         <div>
           <div className="mb-10">
             <div className="flex h-13 w-13 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30 mb-4">
               <span className="font-display text-2xl font-semibold text-gold">DD</span>
             </div>
-            <h1 className="font-display text-4xl text-text-primary leading-snug">
+            <h1 className="font-display text-3xl xl:text-4xl text-text-primary leading-snug">
               The intelligent<br />due diligence platform.
             </h1>
             <p className="mt-3 text-base text-text-secondary leading-relaxed">
@@ -85,17 +88,23 @@ export function LoginPage() {
       </div>
 
       {/* Right panel — form */}
-      <div className="flex flex-1 items-center justify-center px-6 py-12">
+      <div className="flex flex-1 items-center justify-center px-4 sm:px-6 py-12">
         <div className="w-full max-w-md animate-fade-in">
-          <div className="mb-8 text-center lg:hidden">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30">
-              <span className="font-display text-lg font-semibold text-gold">DD</span>
+          {/* Mobile header */}
+          <div className="mb-8 lg:hidden">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30">
+                  <span className="font-display text-lg font-semibold text-gold">DD</span>
+                </div>
+                <span className="font-display text-xl text-text-primary">AI DD</span>
+              </div>
+              <ThemeToggle />
             </div>
-            <h1 className="font-display text-xl text-text-primary">AI DD</h1>
           </div>
 
           <div>
-            <h2 className="font-display text-3xl text-text-primary">
+            <h2 className="font-display text-2xl sm:text-3xl text-text-primary">
               {needs2fa ? "Two-Factor Authentication" : "Welcome back"}
             </h2>
             <p className="mt-1 text-base text-text-secondary">
@@ -105,7 +114,7 @@ export function LoginPage() {
             </p>
           </div>
 
-          <form onSubmit={submit} className="mt-10 space-y-5">
+          <form onSubmit={submit} className="mt-8 sm:mt-10 space-y-5">
             {!needs2fa ? (
               <>
                 <div>

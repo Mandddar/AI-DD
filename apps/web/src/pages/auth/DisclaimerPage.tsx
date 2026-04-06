@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ShieldAlert } from "lucide-react";
 import { authApi } from "../../api/auth";
 import { useAuthStore } from "../../store/auth";
+import { ThemeToggle } from "../../components/ThemeToggle";
 
 export function DisclaimerPage() {
   const navigate = useNavigate();
@@ -25,7 +26,10 @@ export function DisclaimerPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
       <div className="w-full max-w-lg animate-slide-in">
-        <div className="card p-8">
+        <div className="flex justify-end mb-4">
+          <ThemeToggle />
+        </div>
+        <div className="card p-6 sm:p-8">
           <div className="mb-6 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold/10 ring-1 ring-gold/30">
               <ShieldAlert size={22} className="text-gold" />
@@ -36,7 +40,7 @@ export function DisclaimerPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-canvas-border bg-canvas-subtle p-5 text-base text-text-secondary leading-relaxed space-y-3">
+          <div className="rounded-lg border border-canvas-border bg-canvas-subtle p-4 sm:p-5 text-sm sm:text-base text-text-secondary leading-relaxed space-y-3">
             <p>
               This system uses <strong className="text-text-primary">Artificial Intelligence</strong> to support the
               due diligence review process.
@@ -63,7 +67,7 @@ export function DisclaimerPage() {
               checked={accepted}
               onChange={(e) => setAccepted(e.target.checked)}
             />
-            <span className="text-base text-text-secondary">
+            <span className="text-sm sm:text-base text-text-secondary">
               I have read and understood the above disclaimer. I accept that AI-generated content requires
               human review and verification before use.
             </span>

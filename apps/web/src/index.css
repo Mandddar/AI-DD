@@ -2,7 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════
+   THEME VARIABLES — Light & Dark
+   All values are R G B channels (no commas) so
+   Tailwind opacity modifiers like bg-gold/10 work.
+   ═══════════════════════════════════════════════ */
+
 @layer base {
+  /* ── Light Theme (default) ─────────────────── */
+  :root {
+    --canvas:         247 248 251;
+    --canvas-subtle:  239 241 246;
+    --canvas-card:    255 255 255;
+    --canvas-border:  216 220 230;
+
+    --surface:        232 236 244;
+    --surface-hover:  221 226 237;
+    --surface-active: 208 214 228;
+
+    --gold:           158 124 46;
+    --gold-light:     184 149 56;
+    --gold-dark:      122 95 30;
+    --gold-muted:     rgba(158,124,46,0.10);
+
+    --highlight:      58 123 213;
+    --highlight-light: 90 149 232;
+    --highlight-dark: 42 96 174;
+    --highlight-muted: rgba(58,123,213,0.10);
+
+    --risk-high:      208 64 64;
+    --risk-medium:    204 136 32;
+    --risk-low:       46 150 104;
+
+    --text-primary:   26 31 46;
+    --text-secondary: 90 100 120;
+    --text-muted:     142 149 168;
+
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-card-hover: 0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.05);
+    --shadow-elevated: 0 4px 16px rgba(0,0,0,0.08);
+
+    color-scheme: light;
+  }
+
+  /* ── Dark Theme ────────────────────────────── */
+  .dark {
+    --canvas:         11 15 20;
+    --canvas-subtle:  16 22 32;
+    --canvas-card:    18 24 33;
+    --canvas-border:  30 42 58;
+
+    --surface:        26 34 48;
+    --surface-hover:  31 42 58;
+    --surface-active: 37 51 68;
+
+    --gold:           200 169 106;
+    --gold-light:     219 191 130;
+    --gold-dark:      160 128 64;
+    --gold-muted:     rgba(200,169,106,0.12);
+
+    --highlight:      74 144 226;
+    --highlight-light: 106 168 240;
+    --highlight-dark: 53 112 184;
+    --highlight-muted: rgba(74,144,226,0.12);
+
+    --risk-high:      224 82 82;
+    --risk-medium:    224 156 58;
+    --risk-low:       76 174 138;
+
+    --text-primary:   230 234 240;
+    --text-secondary: 160 168 184;
+    --text-muted:     86 98 120;
+
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-card-hover: 0 8px 24px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-elevated: 0 4px 16px rgba(0,0,0,0.35);
+
+    color-scheme: dark;
+  }
+
+  /* ── Base Resets ────────────────────────────── */
   * {
     box-sizing: border-box;
     margin: 0;
@@ -14,41 +93,46 @@
   }
 
   body {
-    background-color: #0B0F14;
-    color: #E6EAF0;
+    background-color: rgb(var(--canvas));
+    color: rgb(var(--text-primary));
     font-family: "DM Sans", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: 0.01em;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
-  /* Custom scrollbar — thin, subtle */
+  /* Scrollbar */
   ::-webkit-scrollbar {
     width: 7px;
     height: 7px;
   }
   ::-webkit-scrollbar-track {
-    background: #101620;
+    background: rgb(var(--canvas-subtle));
   }
   ::-webkit-scrollbar-thumb {
-    background: #1E2A3A;
+    background: rgb(var(--canvas-border));
     border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #253344;
+    background: rgb(var(--surface-active));
   }
 
   /* Selection */
   ::selection {
-    background: rgba(200, 169, 106, 0.25);
-    color: #E6EAF0;
+    background: rgb(var(--gold) / 0.20);
+    color: rgb(var(--text-primary));
   }
 }
 
 @layer components {
   /* ── Buttons ──────────────────────────────────── */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold text-canvas tracking-wide transition-all duration-200;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold tracking-wide transition-all duration-200;
+    color: #FFFFFF;
+  }
+  .dark .btn-primary {
+    color: #0B0F14;
   }
   .btn-primary:hover:not(:disabled) {
     @apply bg-gold-light shadow-gold-glow;

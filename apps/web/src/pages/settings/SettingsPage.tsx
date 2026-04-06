@@ -1,8 +1,45 @@
 import { useState } from 'react';
-import { Settings, User, Shield, Save, Loader2, Key, Trash2, Smartphone, AlertTriangle } from 'lucide-react';
+import { Settings, User, Shield, Save, Loader2, Key, Trash2, Smartphone, AlertTriangle, Sun, Moon, Monitor, Palette } from 'lucide-react';
 import { useAuthStore } from '../../store/auth';
+import { useThemeStore } from '../../store/theme';
 import { usePermissions } from '../../hooks/usePermissions';
 import { authApi } from '../../api/auth';
+import { cn } from '../../lib/utils';
+
+function ThemeSection() {
+  const { theme, setTheme } = useThemeStore();
+  const options = [
+    { value: "light" as const, icon: Sun, label: "Light", desc: "Clean, bright interface" },
+    { value: "dark" as const, icon: Moon, label: "Dark", desc: "Premium dark experience" },
+    { value: "system" as const, icon: Monitor, label: "System", desc: "Match your OS setting" },
+  ];
+  return (
+    <div className="card p-7 space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Palette className="w-6 h-6 text-gold" />
+        <h2 className="text-xl font-display font-semibold text-text-primary">Appearance</h2>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {options.map(({ value, icon: Icon, label, desc }) => (
+          <button
+            key={value}
+            onClick={() => setTheme(value)}
+            className={cn(
+              "flex flex-col items-center gap-2 rounded-xl p-5 border-2 transition-all duration-200 text-center",
+              theme === value
+                ? "border-gold bg-gold/5 text-gold"
+                : "border-canvas-border bg-surface/30 text-text-secondary hover:border-canvas-border hover:bg-surface"
+            )}
+          >
+            <Icon size={24} />
+            <span className="text-sm font-semibold">{label}</span>
+            <span className="text-xs text-text-muted">{desc}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   const { user, setUser, logout } = useAuthStore();
@@ -174,6 +211,9 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+
+      {/* Appearance */}
+      <ThemeSection />
 
       {/* Security — Password Change */}
       <div className="card p-7 space-y-4">

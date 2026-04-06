@@ -1,13 +1,18 @@
 import { NavLink, useParams } from "react-router-dom";
 import {
   LayoutDashboard, FolderOpen, FileText, Brain, BarChart3,
-  ClipboardList, TrendingUp, Shield, Settings, LogOut, Lock, AlertTriangle, Users
+  ClipboardList, TrendingUp, Shield, Settings, LogOut, Lock, AlertTriangle, Users,
 } from "lucide-react";
 import { useAuthStore } from "../../store/auth";
 import { usePermissions } from "../../hooks/usePermissions";
+import { ThemeToggle } from "../ThemeToggle";
 import { cn } from "../../lib/utils";
 
-function SidebarContent() {
+interface SidebarProps {
+  onNavigate?: () => void;
+}
+
+function SidebarContent({ onNavigate }: SidebarProps) {
   const { projectId } = useParams<{ projectId?: string }>();
   const { user, logout } = useAuthStore();
   const perms = usePermissions();
@@ -49,7 +54,7 @@ function SidebarContent() {
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-canvas-border bg-canvas-subtle">
       {/* Logo */}
-      <div className="flex h-18 items-center gap-3.5 border-b border-canvas-border px-6">
+      <div className="flex h-16 items-center gap-3.5 border-b border-canvas-border px-6">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold/10 ring-1 ring-gold/25">
           <span className="font-display text-base font-semibold text-gold">DD</span>
         </div>
@@ -65,28 +70,34 @@ function SidebarContent() {
           <p className="px-3 pt-1 pb-2 text-[11px] text-text-muted uppercase tracking-[0.15em] font-medium">General</p>
         )}
         {generalItems.map((item) => (
-          <NavItem key={item.label} item={item} />
+          <NavItem key={item.label} item={item} onNavigate={onNavigate} />
         ))}
 
         {projectId && projectItems.length > 0 && (
           <p className="px-3 pt-5 pb-2 text-[11px] text-text-muted uppercase tracking-[0.15em] font-medium">Project</p>
         )}
         {projectItems.map((item) => (
-          <NavItem key={item.label} item={item} />
+          <NavItem key={item.label} item={item} onNavigate={onNavigate} />
         ))}
 
         {systemItems.length > 0 && (
           <p className="px-3 pt-5 pb-2 text-[11px] text-text-muted uppercase tracking-[0.15em] font-medium">System</p>
         )}
         {systemItems.map((item) => (
-          <NavItem key={item.label} item={item} />
+          <NavItem key={item.label} item={item} onNavigate={onNavigate} />
         ))}
       </nav>
 
-      {/* User + actions */}
-      <div className="border-t border-canvas-border p-3 space-y-1.5">
+      {/* Theme + User */}
+      <div className="border-t border-canvas-border p-3 space-y-2">
+        <div className="flex items-center justify-between px-3.5 py-1.5">
+          <span className="text-xs text-text-muted font-medium">Theme</span>
+          <ThemeToggle />
+        </div>
+
         <NavLink
           to="/settings"
+          onClick={onNavigate}
           className={({ isActive }) =>
             cn(
               "flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm transition-all duration-200",
@@ -100,7 +111,7 @@ function SidebarContent() {
           Settings
         </NavLink>
         <div className="flex items-center gap-3 rounded-lg px-3.5 py-2.5">
-          <NavLink to="/settings" className="flex items-center gap-3 min-w-0 flex-1 group" title="View profile & settings">
+          <NavLink to="/settings" onClick={onNavigate} className="flex items-center gap-3 min-w-0 flex-1 group" title="View profile & settings">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-xs font-semibold text-text-secondary group-hover:bg-gold/10 group-hover:text-gold transition-all duration-200">
               {user?.full_name.charAt(0).toUpperCase()}
             </div>
@@ -122,7 +133,7 @@ function SidebarContent() {
   );
 }
 
-function NavItem({ item }: { item: any }) {
+function NavItem({ item, onNavigate }: { item: any; onNavigate?: () => void }) {
   const Icon = item.icon;
   const disabled = "disabled" in item && item.disabled;
 
@@ -143,6 +154,7 @@ function NavItem({ item }: { item: any }) {
     <NavLink
       to={item.to}
       end={item.end}
+      onClick={onNavigate}
       className={({ isActive }) =>
         cn(
           "flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all duration-200",
@@ -158,6 +170,6 @@ function NavItem({ item }: { item: any }) {
   );
 }
 
-export function Sidebar() {
-  return <SidebarContent />;
+export function Sidebar({ onNavigate }: SidebarProps = {}) {
+  return <SidebarContent onNavigate={onNavigate} />;
 }
