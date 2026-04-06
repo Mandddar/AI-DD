@@ -23,6 +23,10 @@ import SettingsPage from "./pages/settings/SettingsPage";
 import RedFlagsPage from "./pages/redflags/RedFlagsPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import ProjectSettingsPage from "./pages/projects/ProjectSettingsPage";
+import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
+import TermsPage from "./pages/legal/TermsPage";
+import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
+import { CookieConsent } from "./components/CookieConsent";
 
 const qc = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -116,6 +120,9 @@ function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/disclaimer" element={<DisclaimerPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/cookies" element={<CookiePolicyPage />} />
 
       {/* Protected */}
       <Route
@@ -149,6 +156,7 @@ export default function App() {
     <QueryClientProvider client={qc}>
       <BrowserRouter>
         <AppRoutes />
+        <CookieConsent />
       </BrowserRouter>
     </QueryClientProvider>
   );

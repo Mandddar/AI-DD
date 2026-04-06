@@ -307,18 +307,25 @@ function CTASection() {
 function Footer() {
   return (
     <footer className="border-t border-canvas-border py-8">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gold/10">
-            <span className="font-display text-base text-gold">DD</span>
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 space-y-5">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gold/10">
+              <span className="font-display text-base text-gold">DD</span>
+            </div>
+            <span className="text-base text-text-muted">AI DD</span>
           </div>
-          <span className="text-base text-text-muted">AI DD</span>
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-text-muted text-center">
+            <AlertTriangle size={13} className="text-gold shrink-0" />
+            AI-generated findings require human verification.
+          </div>
+          <p className="text-sm text-text-muted">© {new Date().getFullYear()} AI DD</p>
         </div>
-        <div className="flex items-center gap-2 text-xs sm:text-sm text-text-muted text-center">
-          <AlertTriangle size={13} className="text-gold shrink-0" />
-          AI-generated findings require human verification.
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-text-muted">
+          <Link to="/privacy" className="hover:text-text-primary transition-colors">Privacy Policy</Link>
+          <Link to="/terms" className="hover:text-text-primary transition-colors">Terms & Conditions</Link>
+          <Link to="/cookies" className="hover:text-text-primary transition-colors">Cookie Policy</Link>
         </div>
-        <p className="text-sm text-text-muted">© {new Date().getFullYear()} AI DD</p>
       </div>
     </footer>
   );
