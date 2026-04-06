@@ -5,7 +5,8 @@ import { planning, type BasicDataInput, type RequestItem } from '../../api/plann
 import { usePermissions } from '../../hooks/usePermissions';
 import {
   ClipboardList, Building2, AlertTriangle, MessageSquare,
-  CheckCircle2, FileSpreadsheet, ChevronRight, Loader2, Send, X
+  CheckCircle2, FileSpreadsheet, ChevronRight, Loader2, Send, X,
+  User, Check, Clock,
 } from 'lucide-react';
 
 const PHASES = [
@@ -75,6 +76,15 @@ export default function PlanningPage() {
 
   const [queryDialog, setQueryDialog] = useState<{ itemId: string; question: string } | null>(null);
   const [queryText, setQueryText] = useState('');
+  const [dialogAnswers, setDialogAnswers] = useState<Record<number, string>>({});
+
+  const answerQuestion = useMutation({
+    mutationFn: ({ questionId, answer }: { questionId: number; answer: string }) =>
+      planning.answerDialogQuestion(projectId!, questionId, answer),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['planning', projectId] });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -231,27 +241,155 @@ export default function PlanningPage() {
 
       {/* Phase 3 - Interactive Dialog */}
       {plan?.current_phase === 'dialog' && (
-        <div className="card p-7 space-y-4">
-          <h2 className="text-xl font-display font-semibold text-primary">Phase 3 - Interactive Dialog</h2>
-          <p className="text-secondary text-base">AI asks targeted follow-up questions based on the risk analysis.</p>
+        <div className="card p-7 space-y-5">
+          <div>
+            <h2 className="text-xl font-display font-semibold text-primary">Phase 3 - Interactive Dialog</h2>
+            <p className="text-secondary text-base mt-1">
+              {perms.isReadOnly
+                ? "Review the questions and answers below."
+                : "Answer the AI-generated follow-up questions below. All team members can contribute answers."}
+            </p>
+          </div>
+
           {plan.dialog_history?.length ? (
-            <div className="space-y-3">
-              {plan.dialog_history.map((item: any, i: number) => (
-                <div key={i} className="bg-surface p-4 rounded-lg border border-canvas-border">
-                  <p className="text-gold text-base font-medium mb-1">Q: {item.question}</p>
-                  <p className="text-primary text-base">A: {item.answer || '-'}</p>
-                </div>
-              ))}
+            <div className="space-y-4">
+              {plan.dialog_history.map((item: { question: string; answer?: string; answered_by_name?: string; answered_by_role?: string }, i: number) => {
+                const hasAnswer = !!item.answer;
+                const draftAnswer = dialogAnswers[i] ?? '';
+                const canAnswer = perms.canUpdateRequestList && !perms.isReadOnly;
+
+                return (
+                  <div key={i} className={`rounded-xl border transition-all ${
+                    hasAnswer ? 'border-risk-low/30 bg-risk-low/5' : 'border-canvas-border bg-surface/50'
+                  }`}>
+                    {/* Question */}
+                    <div className="flex items-start gap-3 p-5 pb-3">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gold/10 text-gold text-xs font-bold mt-0.5">
+                        {i + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-medium text-text-primary leading-relaxed">{item.question}</p>
+                      </div>
+                      {hasAnswer ? (
+                        <span className="shrink-0 flex items-center gap-1 text-xs text-risk-low bg-risk-low/10 rounded-full px-2.5 py-1">
+                          <Check size={12} /> Answered
+                        </span>
+                      ) : (
+                        <span className="shrink-0 flex items-center gap-1 text-xs text-text-muted bg-surface rounded-full px-2.5 py-1">
+                          <Clock size={12} /> Pending
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Answer display or input */}
+                    <div className="px-5 pb-5 pl-15">
+                      {hasAnswer ? (
+                        <div>
+                          <div className="bg-canvas-card border border-canvas-border rounded-lg p-4">
+                            <p className="text-base text-text-primary leading-relaxed">{item.answer}</p>
+                          </div>
+                          {item.answered_by_name && (
+                            <div className="flex items-center gap-2 mt-2 text-xs text-text-muted">
+                              <User size={12} />
+                              <span>{item.answered_by_name}</span>
+                              {item.answered_by_role && (
+                                <span className="text-text-muted/60">({item.answered_by_role.replace('_', ' ')})</span>
+                              )}
+                            </div>
+                          )}
+                          {/* Allow re-answering for advisors */}
+                          {perms.canManagePlanning && !dialogAnswers.hasOwnProperty(i) && (
+                            <button
+                              className="text-xs text-gold hover:text-gold-light mt-2 transition-colors"
+                              onClick={() => setDialogAnswers(prev => ({ ...prev, [i]: item.answer || '' }))}
+                            >
+                              Edit answer
+                            </button>
+                          )}
+                          {dialogAnswers.hasOwnProperty(i) && (
+                            <div className="mt-3 space-y-2">
+                              <textarea
+                                className="input w-full h-24 resize-none"
+                                value={draftAnswer}
+                                onChange={e => setDialogAnswers(prev => ({ ...prev, [i]: e.target.value }))}
+                                placeholder="Update your answer..."
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  className="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5"
+                                  disabled={!draftAnswer.trim() || answerQuestion.isPending}
+                                  onClick={() => {
+                                    answerQuestion.mutate({ questionId: i, answer: draftAnswer.trim() }, {
+                                      onSuccess: () => setDialogAnswers(prev => { const n = { ...prev }; delete n[i]; return n; }),
+                                    });
+                                  }}
+                                >
+                                  <Send size={13} /> Update
+                                </button>
+                                <button
+                                  className="btn-ghost text-sm px-4 py-1.5"
+                                  onClick={() => setDialogAnswers(prev => { const n = { ...prev }; delete n[i]; return n; })}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : canAnswer ? (
+                        <div className="space-y-2">
+                          <textarea
+                            className="input w-full h-24 resize-none"
+                            value={draftAnswer}
+                            onChange={e => setDialogAnswers(prev => ({ ...prev, [i]: e.target.value }))}
+                            placeholder={
+                              perms.isAdvisor
+                                ? "Provide your assessment or information..."
+                                : "Provide the requested information or document reference..."
+                            }
+                          />
+                          <button
+                            className="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5"
+                            disabled={!draftAnswer.trim() || answerQuestion.isPending}
+                            onClick={() => {
+                              answerQuestion.mutate({ questionId: i, answer: draftAnswer.trim() }, {
+                                onSuccess: () => setDialogAnswers(prev => { const n = { ...prev }; delete n[i]; return n; }),
+                              });
+                            }}
+                          >
+                            {answerQuestion.isPending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                            Submit Answer
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-text-muted italic">Awaiting response from the team.</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
-            <p className="text-secondary italic">No dialog questions generated yet.</p>
+            <div className="text-center py-8">
+              <MessageSquare className="w-14 h-14 text-text-muted/20 mx-auto mb-3" />
+              <p className="text-secondary">No dialog questions generated yet.</p>
+            </div>
           )}
-          {perms.canManagePlanning && (
-            <button className="btn-primary px-6 py-2" onClick={() => advancePhase.mutate()}
-              disabled={advancePhase.isPending}>
-              {advancePhase.isPending ? 'Processing...' : 'Proceed to Plan Approval'}
-            </button>
-          )}
+
+          {/* Progress + Advance button */}
+          {plan.dialog_history?.length ? (
+            <div className="flex items-center justify-between pt-2 border-t border-canvas-border">
+              <div className="text-sm text-text-secondary">
+                {plan.dialog_history.filter((q: { answer?: string }) => q.answer).length} of {plan.dialog_history.length} questions answered
+              </div>
+              {perms.canManagePlanning && (
+                <button className="btn-primary px-6 py-2" onClick={() => advancePhase.mutate()}
+                  disabled={advancePhase.isPending}>
+                  {advancePhase.isPending ? 'Processing...' : 'Proceed to Plan Approval'}
+                </button>
+              )}
+            </div>
+          ) : null}
         </div>
       )}
 

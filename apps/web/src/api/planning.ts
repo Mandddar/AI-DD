@@ -51,6 +51,9 @@ export const planning = {
   advancePhase: (projectId: string) =>
     api.post<AuditPlan>(`/projects/${projectId}/planning/advance-phase`).then(r => r.data),
 
+  answerDialogQuestion: (projectId: string, questionId: number, answer: string) =>
+    api.post<AuditPlan>(`/projects/${projectId}/planning/dialog/answer`, { question_id: questionId, answer }).then(r => r.data),
+
   approvePlan: (projectId: string) =>
     api.post<AuditPlan>(`/projects/${projectId}/planning/approve`).then(r => r.data),
 

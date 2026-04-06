@@ -113,6 +113,46 @@ async def advance_phase(
     return plan
 
 
+@router.post("/dialog/answer", response_model=AuditPlanOut)
+async def answer_dialog_question(
+    project_id: UUID,
+    data: DialogAnswer,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_contributor),
+):
+    """Phase 3: Submit an answer to an AI-generated dialog question.
+    Advisors, sellers, and team advisors can answer. Buyers are read-only."""
+    result = await db.execute(
+        select(AuditPlan).where(AuditPlan.project_id == project_id)
+    )
+    plan = result.scalar_one_or_none()
+    if not plan:
+        raise HTTPException(status_code=404, detail="No audit plan found")
+    if plan.current_phase != PlanningPhase.dialog:
+        raise HTTPException(status_code=400, detail="Dialog answers can only be submitted during Phase 3")
+
+    dialog = plan.dialog_history or []
+    if data.question_id < 0 or data.question_id >= len(dialog):
+        raise HTTPException(status_code=400, detail="Invalid question index")
+
+    # Update the answer in the dialog history
+    dialog[data.question_id] = {
+        **dialog[data.question_id],
+        "answer": data.answer,
+        "answered_by": str(user.id),
+        "answered_by_name": user.full_name,
+        "answered_by_role": user.role.value,
+    }
+    plan.dialog_history = dialog
+    # Force SQLAlchemy to detect JSON mutation
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(plan, "dialog_history")
+
+    await db.commit()
+    await db.refresh(plan)
+    return plan
+
+
 @router.post("/approve", response_model=AuditPlanOut)
 async def approve_plan(
     project_id: UUID,
