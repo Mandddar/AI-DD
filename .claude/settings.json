@@ -22,7 +22,12 @@
       "Bash(docker push:*)",
       "Bash(python -c \"import secrets; print\\(secrets.token_hex\\(32\\)\\)\")",
       "WebFetch(domain:aidd-api.onrender.com)",
-      "WebFetch(domain:aidd-kappa.vercel.app)"
+      "WebFetch(domain:aidd-kappa.vercel.app)",
+      "Bash(printf 'VITE_API_URL=https://aidd-api.onrender.com\\\\n')",
+      "Bash(xxd \"m:/programming/AI-DD/apps/web/.env.production\")",
+      "Bash(rm -rf dist)",
+      "Bash(npm run:*)",
+      "Bash(grep -o \"aidd-api.onrender.com\" \"m:/programming/AI-DD/apps/web/dist/assets/\"*.js)"
     ]
   }
 }
