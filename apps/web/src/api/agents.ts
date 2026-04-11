@@ -14,6 +14,8 @@ export interface Finding {
   description: string;
   severity: Severity;
   source_doc_ids: string[];
+  source_doc_names: string[];
+  source_pages: string[];
   source_excerpts: string[];
   status: FindingStatus;
   reviewer_id: string | null;

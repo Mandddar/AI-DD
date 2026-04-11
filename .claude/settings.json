@@ -27,7 +27,11 @@
       "Bash(xxd \"m:/programming/AI-DD/apps/web/.env.production\")",
       "Bash(rm -rf dist)",
       "Bash(npm run:*)",
-      "Bash(grep -o \"aidd-api.onrender.com\" \"m:/programming/AI-DD/apps/web/dist/assets/\"*.js)"
+      "Bash(grep -o \"aidd-api.onrender.com\" \"m:/programming/AI-DD/apps/web/dist/assets/\"*.js)",
+      "Bash(curl -s -I -X OPTIONS \"https://aidd-api.onrender.com/api/v1/projects\" -H \"Origin: https://aidd-kappa.vercel.app\" -H \"Access-Control-Request-Method: POST\" -H \"Access-Control-Request-Headers: content-type,authorization\")",
+      "Bash(curl -s -I -X POST \"https://aidd-api.onrender.com/api/v1/projects\" -H \"Origin: https://aidd-kappa.vercel.app\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer test\")",
+      "Bash(curl -s -w \"\\\\nHTTP_CODE: %{http_code}\\\\n\" -X POST \"https://aidd-api.onrender.com/api/v1/projects\" -H \"Origin: https://aidd-kappa.vercel.app\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer eytest\" -d '{\"name\":\"test\"}')",
+      "Bash(curl -s -X POST \"https://aidd-api.onrender.com/api/v1/auth/login\" -H \"Content-Type: application/json\" -d '{\"email\":\"ayush@gmail.com\",\"password\":\"ayush@19\"}')"
     ]
   }
 }

@@ -52,3 +52,5 @@ class ProjectMember(Base):
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     added_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    completion_approved = Column(String(10), nullable=True)  # null=not voted, "approved", "rejected"
+    completion_voted_at = Column(DateTime(timezone=True), nullable=True)

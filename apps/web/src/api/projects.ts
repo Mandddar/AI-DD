@@ -18,4 +18,10 @@ export const projectsApi = {
   get: (id: string) => api.get<Project>(`/projects/${id}`).then((r) => r.data),
   create: (data: CreateProjectData) => api.post<Project>("/projects", data).then((r) => r.data),
   update: (id: string, data: Partial<Project>) => api.patch<Project>(`/projects/${id}`, data).then((r) => r.data),
+
+  // Deal completion voting
+  voteCompletion: (id: string, vote: "approved" | "rejected") =>
+    api.post(`/projects/${id}/complete/vote?vote=${vote}`).then((r) => r.data),
+  getCompletionStatus: (id: string) =>
+    api.get(`/projects/${id}/complete/status`).then((r) => r.data),
 };

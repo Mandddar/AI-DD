@@ -65,7 +65,9 @@ class AgentFinding(Base):
     description = Column(Text, nullable=False)
     severity = Column(SAEnum(Severity), nullable=False, default=Severity.medium)
 
-    source_doc_ids = Column(JSON, nullable=False, default=list)   # [uuid str, ...]
+    source_doc_ids = Column(JSON, nullable=False, default=list)    # [uuid str, ...]
+    source_doc_names = Column(JSON, nullable=False, default=list) # ["filename.pdf", ...]
+    source_pages = Column(JSON, nullable=False, default=list)     # ["p.3", "p.12", ...]
     source_excerpts = Column(JSON, nullable=False, default=list)  # [str, ...]
 
     status = Column(SAEnum(FindingStatus), nullable=False, default=FindingStatus.pending_review)

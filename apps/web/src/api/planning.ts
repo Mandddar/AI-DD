@@ -65,4 +65,16 @@ export const planning = {
 
   getTeamMembers: (projectId: string) =>
     api.get<TeamMember[]>(`/projects/${projectId}/planning/team-members`).then(r => r.data),
+
+  // In-app chat
+  sendChatMessage: (projectId: string, message: string, requestItemId?: string) =>
+    api.post(`/projects/${projectId}/planning/chat`, {
+      message,
+      request_item_id: requestItemId || null,
+    }).then(r => r.data),
+
+  getChatMessages: (projectId: string, requestItemId?: string) =>
+    api.get(`/projects/${projectId}/planning/chat`, {
+      params: requestItemId ? { request_item_id: requestItemId } : {},
+    }).then(r => r.data),
 };

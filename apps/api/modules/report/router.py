@@ -346,7 +346,8 @@ def _generate_docx(report) -> str:
         doc.add_paragraph(str(content))
 
     # Save
-    uploads_dir = Path(__file__).parent.parent.parent / "uploads" / "reports"
+    from core.config import get_settings
+    uploads_dir = Path(get_settings().upload_dir) / "reports"
     uploads_dir.mkdir(parents=True, exist_ok=True)
     filepath = uploads_dir / f"{uuid.uuid4()}.docx"
     doc.save(str(filepath))
@@ -442,7 +443,8 @@ def _generate_xlsx(report) -> str:
         ws.append([str(content)])
 
     # Save
-    uploads_dir = Path(__file__).parent.parent.parent / "uploads" / "reports"
+    from core.config import get_settings
+    uploads_dir = Path(get_settings().upload_dir) / "reports"
     uploads_dir.mkdir(parents=True, exist_ok=True)
     filepath = uploads_dir / f"{uuid.uuid4()}.xlsx"
     wb.save(str(filepath))

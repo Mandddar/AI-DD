@@ -6,7 +6,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import {
   ClipboardList, Building2, AlertTriangle, MessageSquare,
   CheckCircle2, FileSpreadsheet, ChevronRight, Loader2, Send, X,
-  User, Check, Clock,
+  User, Check, Clock, MessageCircle,
 } from 'lucide-react';
 
 const PHASES = [
@@ -77,6 +77,20 @@ export default function PlanningPage() {
   const [queryDialog, setQueryDialog] = useState<{ itemId: string; question: string } | null>(null);
   const [queryText, setQueryText] = useState('');
   const [dialogAnswers, setDialogAnswers] = useState<Record<number, string>>({});
+  const [chatItemId, setChatItemId] = useState<string | null>(null);
+  const [chatMsg, setChatMsg] = useState('');
+
+  const { data: chatMessages, refetch: refetchChat } = useQuery({
+    queryKey: ['planning-chat', projectId, chatItemId],
+    queryFn: () => planning.getChatMessages(projectId!, chatItemId || undefined),
+    enabled: !!chatItemId,
+    refetchInterval: chatItemId ? 5000 : false,
+  });
+
+  const sendChat = useMutation({
+    mutationFn: () => planning.sendChatMessage(projectId!, chatMsg, chatItemId || undefined),
+    onSuccess: () => { setChatMsg(''); refetchChat(); },
+  });
 
   const answerQuestion = useMutation({
     mutationFn: ({ questionId, answer }: { questionId: number; answer: string }) =>
@@ -433,6 +447,7 @@ export default function PlanningPage() {
                     <th className="p-3 text-secondary font-medium">Assigned To</th>
                     <th className="p-3 text-secondary font-medium">Status</th>
                     <th className="p-3 text-secondary font-medium">Priority</th>
+                    <th className="p-3 text-secondary font-medium">Chat</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -479,6 +494,17 @@ export default function PlanningPage() {
                           <option value="low">Low</option>
                         </select>
                       </td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => setChatItemId(chatItemId === item.id ? null : item.id)}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            chatItemId === item.id ? 'bg-gold/10 text-gold' : 'text-text-muted hover:text-text-primary hover:bg-surface'
+                          }`}
+                          title="Open discussion"
+                        >
+                          <MessageCircle size={16} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -486,6 +512,72 @@ export default function PlanningPage() {
             </div>
           ) : (
             <p className="text-secondary italic">No request items generated yet.</p>
+          )}
+        </div>
+      )}
+
+      {/* Chat Panel — shows below the request list when a chat is opened */}
+      {chatItemId && (
+        <div className="card overflow-hidden animate-fade-in">
+          <div className="flex items-center justify-between p-5 border-b border-canvas-border">
+            <div className="flex items-center gap-2">
+              <MessageCircle size={18} className="text-gold" />
+              <h3 className="text-base font-semibold text-text-primary">
+                Discussion — Item #{requestItems?.find(i => i.id === chatItemId)?.item_number}
+              </h3>
+            </div>
+            <button onClick={() => setChatItemId(null)} className="text-text-muted hover:text-text-primary transition-colors">
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="p-4 bg-canvas-subtle border-b border-canvas-border">
+            <p className="text-sm text-text-secondary">
+              {requestItems?.find(i => i.id === chatItemId)?.question}
+            </p>
+          </div>
+
+          {/* Messages */}
+          <div className="max-h-64 overflow-y-auto p-4 space-y-3">
+            {chatMessages?.length ? (
+              chatMessages.map((m: { id: string; sender_name: string; sender_role: string | null; message: string; created_at: string }) => (
+                <div key={m.id} className="flex items-start gap-2.5">
+                  <div className="h-7 w-7 shrink-0 rounded-full bg-surface flex items-center justify-center text-xs font-semibold text-text-secondary">
+                    {m.sender_name?.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-text-primary">{m.sender_name}</span>
+                      {m.sender_role && <span className="text-xs text-text-muted capitalize">{m.sender_role.replace('_', ' ')}</span>}
+                      <span className="text-xs text-text-muted">{new Date(m.created_at).toLocaleTimeString()}</span>
+                    </div>
+                    <p className="text-sm text-text-secondary mt-0.5">{m.message}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-text-muted text-center py-4">No messages yet. Start the discussion.</p>
+            )}
+          </div>
+
+          {/* Input */}
+          {!perms.isReadOnly && (
+            <div className="p-4 border-t border-canvas-border flex gap-2">
+              <input
+                className="input flex-1"
+                placeholder="Type a message..."
+                value={chatMsg}
+                onChange={e => setChatMsg(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && chatMsg.trim()) sendChat.mutate(); }}
+              />
+              <button
+                className="btn-primary px-4 py-2 flex items-center gap-1.5"
+                disabled={!chatMsg.trim() || sendChat.isPending}
+                onClick={() => sendChat.mutate()}
+              >
+                <Send size={14} /> Send
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -523,10 +615,13 @@ export default function PlanningPage() {
                 className="btn-primary px-4 py-2 text-base flex items-center gap-2"
                 disabled={!queryText.trim()}
                 onClick={() => {
-                  updateItem.mutate(
-                    { itemId: queryDialog.itemId, data: { status: 'query' as any } },
-                    { onSuccess: () => { setQueryDialog(null); setQueryText(''); } }
-                  );
+                  // Send as chat message + update status
+                  planning.sendChatMessage(projectId!, queryText.trim(), queryDialog.itemId).then(() => {
+                    updateItem.mutate(
+                      { itemId: queryDialog.itemId, data: { status: 'query' as any } },
+                      { onSuccess: () => { setQueryDialog(null); setQueryText(''); setChatItemId(queryDialog.itemId); } }
+                    );
+                  });
                 }}
               >
                 <Send className="w-4 h-4" /> Send Query

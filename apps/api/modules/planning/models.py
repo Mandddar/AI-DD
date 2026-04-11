@@ -85,3 +85,17 @@ class RequestListItem(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
                         onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class PlanningMessage(Base):
+    """In-app chat messages for planning query discussions."""
+    __tablename__ = "planning_messages"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False, index=True)
+    request_item_id = Column(UUID(as_uuid=True), ForeignKey("request_list_items.id"), nullable=True, index=True)
+    sender_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    sender_name = Column(String(255), nullable=False)
+    sender_role = Column(String(50), nullable=True)
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

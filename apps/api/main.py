@@ -60,3 +60,23 @@ app.include_router(self_improvement_router, prefix="/api/v1")
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "ai-dd-api"}
+
+
+# Surface real errors instead of generic 500 (helps debug deployment)
+from fastapi import Request as FastAPIRequest
+from fastapi.responses import JSONResponse
+import traceback
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: FastAPIRequest, exc: Exception):
+    tb = traceback.format_exc()
+    logger = __import__("logging").getLogger("uvicorn.error")
+    logger.error(f"Unhandled error: {exc}\n{tb}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "type": type(exc).__name__},
+        headers={
+            "Access-Control-Allow-Origin": "https://aidd-kappa.vercel.app",
+            "Access-Control-Allow-Credentials": "true",
+        },
+    )

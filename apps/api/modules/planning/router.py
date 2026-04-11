@@ -12,7 +12,7 @@ from modules.auth.dependencies import project_manager, project_contributor, proj
 from modules.auth.models import User
 from modules.projects.models import ProjectMember
 from modules.auth.models import User as UserModel
-from .models import AuditPlan, RequestListItem, PlanningPhase
+from .models import AuditPlan, RequestListItem, PlanningPhase, PlanningMessage
 from .schemas import BasicDataInput, DialogAnswer, RequestItemUpdate, AuditPlanOut, RequestItemOut
 from .service import generate_risk_analysis, generate_dialog_questions, generate_audit_plan, generate_request_list_items
 
@@ -257,4 +257,76 @@ async def get_team_members(
     return [
         {"id": str(m.id), "name": m.full_name, "email": m.email, "role": m.role.value if m.role else None}
         for m in members
+    ]
+
+
+# ── In-App Chat for Query Discussions ────────────────────
+
+from pydantic import BaseModel as PydanticBaseModel
+
+class ChatMessageInput(PydanticBaseModel):
+    request_item_id: UUID | None = None
+    message: str
+
+
+@router.post("/chat", status_code=201)
+async def send_chat_message(
+    project_id: UUID,
+    data: ChatMessageInput,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_contributor),
+):
+    """Send a chat message in the planning discussion. Linked to a request item if specified."""
+    msg = PlanningMessage(
+        project_id=project_id,
+        request_item_id=data.request_item_id,
+        sender_id=user.id,
+        sender_name=user.full_name,
+        sender_role=user.role.value if user.role else None,
+        message=data.message,
+    )
+    db.add(msg)
+    await db.commit()
+    await db.refresh(msg)
+    return {
+        "id": str(msg.id),
+        "project_id": str(msg.project_id),
+        "request_item_id": str(msg.request_item_id) if msg.request_item_id else None,
+        "sender_id": str(msg.sender_id),
+        "sender_name": msg.sender_name,
+        "sender_role": msg.sender_role,
+        "message": msg.message,
+        "created_at": msg.created_at.isoformat(),
+    }
+
+
+@router.get("/chat")
+async def get_chat_messages(
+    project_id: UUID,
+    request_item_id: UUID | None = None,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(project_reader),
+):
+    """Get chat messages for this project's planning. Optionally filter by request item."""
+    query = (
+        select(PlanningMessage)
+        .where(PlanningMessage.project_id == project_id)
+        .order_by(PlanningMessage.created_at.asc())
+    )
+    if request_item_id:
+        query = query.where(PlanningMessage.request_item_id == request_item_id)
+
+    result = await db.execute(query)
+    messages = result.scalars().all()
+    return [
+        {
+            "id": str(m.id),
+            "request_item_id": str(m.request_item_id) if m.request_item_id else None,
+            "sender_id": str(m.sender_id),
+            "sender_name": m.sender_name,
+            "sender_role": m.sender_role,
+            "message": m.message,
+            "created_at": m.created_at.isoformat(),
+        }
+        for m in messages
     ]

@@ -87,6 +87,20 @@ function FindingCard({ finding, projectId, runId, canReview }: { finding: Findin
         <div className="border-t border-canvas-border px-4 pb-4 pt-3 space-y-3">
           <p className="text-base text-text-secondary leading-relaxed">{finding.description}</p>
 
+          {/* Source documents */}
+          {finding.source_doc_names?.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {finding.source_doc_names.map((name, idx) => (
+                <span key={idx} className="inline-flex items-center gap-1.5 rounded-lg bg-highlight/10 text-highlight px-2.5 py-1 text-xs font-medium">
+                  <span>{name}</span>
+                  {finding.source_pages?.[idx] && (
+                    <span className="text-highlight/60">{finding.source_pages[idx]}</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
+
           {finding.source_excerpts.length > 0 && (
             <div className="rounded bg-canvas-subtle border border-canvas-border p-3">
               <p className="mb-1 text-xs font-medium uppercase tracking-wider text-text-muted">Source excerpt</p>

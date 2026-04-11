@@ -36,12 +36,24 @@ class BaseAgent(ABC):
         query: str,
         document_ids: list[UUID],
         db: AsyncSession,
-    ) -> tuple[list[str], list[str]]:
-        """Return (text_excerpts, doc_id_strings) of the top relevant chunks via FTS."""
+    ) -> tuple[list[str], list[str], list[str], list[str]]:
+        """Return (text_excerpts, doc_id_strings, doc_names, page_estimates) via FTS."""
+        from modules.dms.models import Document
         chunks = await fts_search(query, document_ids, db, top_k=10)
         excerpts = [c.chunk_text[:600] for c in chunks]
         doc_ids = [str(c.document_id) for c in chunks]
-        return excerpts, doc_ids
+
+        # Resolve document names and estimate page numbers from chunk index
+        doc_names = []
+        page_estimates = []
+        for c in chunks:
+            doc = await db.get(Document, c.document_id)
+            doc_names.append(doc.original_filename if doc else "Unknown")
+            # Estimate page: ~3000 chars per page, chunks are 1500 chars
+            estimated_page = max(1, (c.chunk_index * 1500) // 3000 + 1)
+            page_estimates.append(f"p.{estimated_page}")
+
+        return excerpts, doc_ids, doc_names, page_estimates
 
     async def _call_llm(self, system_prompt: str, user_prompt: str) -> list[dict]:
         """Call Groq API (llama-3.3-70b-versatile) and parse JSON findings array."""
@@ -80,7 +92,7 @@ class BaseAgent(ABC):
 
         try:
             primary_query = self._primary_query()
-            excerpts, used_doc_ids = await self._retrieve_context(primary_query, document_ids, db)
+            excerpts, used_doc_ids, doc_names, page_estimates = await self._retrieve_context(primary_query, document_ids, db)
             system_prompt, user_prompt = self._build_prompt(excerpts)
             raw_findings = await self._call_llm(system_prompt, user_prompt)
             findings = [
@@ -91,6 +103,8 @@ class BaseAgent(ABC):
                     "description": f.get("description", ""),
                     "severity": f.get("severity", "medium"),
                     "source_doc_ids": used_doc_ids[:3],
+                    "source_doc_names": doc_names[:3],
+                    "source_pages": page_estimates[:3],
                     "source_excerpts": [f.get("source_excerpt", "")] if f.get("source_excerpt") else [],
                 }
                 for f in raw_findings
