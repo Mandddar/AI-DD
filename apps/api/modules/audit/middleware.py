@@ -43,13 +43,16 @@ async def _resolve_user_email(user_id: str, db) -> str | None:
 
 class AuditMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-
-        # Skip non-essential paths
+        # Skip non-essential paths early
         if request.url.path in SKIP_PATHS:
-            return response
+            return await call_next(request)
 
-        # Log the request asynchronously
+        try:
+            response = await call_next(request)
+        except Exception:
+            raise
+
+        # Log the request — never let audit logging break the response
         try:
             await self._log_request(request, response.status_code)
         except Exception as e:
@@ -58,21 +61,24 @@ class AuditMiddleware(BaseHTTPMiddleware):
         return response
 
     async def _log_request(self, request: Request, status_code: int):
-        user_id_str, _ = _extract_user_from_token(request)
+        try:
+            user_id_str, _ = _extract_user_from_token(request)
 
-        async with AsyncSessionLocal() as db:
-            user_email = None
-            if user_id_str:
-                user_email = await _resolve_user_email(user_id_str, db)
+            async with AsyncSessionLocal() as db:
+                user_email = None
+                if user_id_str:
+                    user_email = await _resolve_user_email(user_id_str, db)
 
-            log = AuditLog(
-                user_id=user_id_str if user_id_str else None,
-                user_email=user_email,
-                action=AuditAction.data_accessed,
-                resource_type="api",
-                description=f"{request.method} {request.url.path} -> {status_code}",
-                ip_address=request.client.host if request.client else None,
-                user_agent=request.headers.get("user-agent", "")[:500],
-            )
-            db.add(log)
-            await db.commit()
+                log = AuditLog(
+                    user_id=user_id_str if user_id_str else None,
+                    user_email=user_email,
+                    action=AuditAction.data_accessed,
+                    resource_type="api",
+                    description=f"{request.method} {request.url.path} -> {status_code}",
+                    ip_address=request.client.host if request.client else None,
+                    user_agent=request.headers.get("user-agent", "")[:500],
+                )
+                db.add(log)
+                await db.commit()
+        except Exception as e:
+            logger.warning("Audit DB write failed: %s", e)

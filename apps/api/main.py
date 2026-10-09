@@ -33,16 +33,17 @@ app = FastAPI(
     redoc_url="/redoc" if settings.is_dev else None,
 )
 
+# Audit trail middleware — logs every API request
+# NOTE: added BEFORE CORSMiddleware so that CORS runs first (FastAPI reverses order)
+app.add_middleware(AuditMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://aidd-kappa.vercel.app", "http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["https://aidd-kappa.vercel.app", "http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Audit trail middleware — logs every API request
-app.add_middleware(AuditMiddleware)
 
 # ── Module Routers ──────────────────────────────────────────
 app.include_router(auth_router, prefix="/api/v1")
